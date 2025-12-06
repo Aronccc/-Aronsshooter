@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>簡易 3D 射擊遊戲 - RPG進化版</title>
+    <title>簡易 3D 射擊遊戲 - 戰術進化版</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background-color: #000;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Microsoft JhengHei', 'Segoe UI', sans-serif;
             user-select: none;
         }
 
@@ -20,7 +20,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* 讓點擊穿透到 Canvas */
+            pointer-events: none;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -28,29 +28,42 @@
             box-sizing: border-box;
         }
 
-        /* 抬頭顯示器 (HUD) */
+        /* 頂部 HUD 區域 */
         .hud-top {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
+            width: 100%;
         }
 
+        /* 左側資訊 */
         .hud-left {
             display: flex;
             flex-direction: column;
             gap: 5px;
+            pointer-events: auto;
         }
 
         .hud-text {
             color: #00ffcc;
-            font-size: 24px;
+            font-size: 32px;
             font-weight: bold;
             text-shadow: 0 0 5px #00ffcc;
         }
 
+        /* 新增回合數顯示樣式 */
+        #round-display {
+            color: #ffaa00;
+            font-size: 36px;
+            font-weight: 900;
+            text-shadow: 0 0 10px #ff4400;
+            margin-top: 5px;
+            display: none; /* 預設隱藏，回合制才顯示 */
+        }
+
         .rank-text {
             color: #ffaa00;
-            font-size: 32px;
+            font-size: 40px;
             font-weight: 900;
             text-shadow: 0 0 10px #ff4400;
             margin-top: 5px;
@@ -62,22 +75,58 @@
         .level-badge {
             background: #ffaa00;
             color: black;
-            padding: 2px 8px;
+            padding: 2px 10px;
             border-radius: 4px;
-            font-size: 20px;
+            font-size: 24px;
         }
 
+        /* 中間：時間條 */
+        .hud-center {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            top: 20px;
+        }
+
+        .time-bar-container {
+            width: 400px;
+            height: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #aaa;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        #time-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #fff, #aaa);
+            transform-origin: left;
+            transition: width 0.1s linear;
+        }
+
+        #time-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 5px black;
+        }
+
+        /* 右側狀態 */
         .status-area {
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            gap: 8px;
+            gap: 10px;
         }
 
-        /* 條狀圖容器通用樣式 */
         .bar-container {
-            width: 220px;
-            height: 20px;
+            width: 280px;
+            height: 25px;
             background: rgba(0, 0, 0, 0.6);
             border: 2px solid #555;
             border-radius: 10px;
@@ -96,13 +145,12 @@
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 12px;
+            font-size: 16px;
             font-weight: bold;
             text-shadow: 1px 1px 2px black;
             z-index: 2;
         }
 
-        /* 血量條 */
         .health-container { border-color: #00ffcc; }
         #health-bar {
             width: 100%;
@@ -111,8 +159,7 @@
             transition: width 0.2s;
         }
 
-        /* 經驗條 */
-        .xp-container { border-color: #ffd700; height: 16px; width: 220px;}
+        .xp-container { border-color: #ffd700; height: 18px; width: 280px;}
         #xp-bar {
             width: 0%;
             height: 100%;
@@ -120,18 +167,16 @@
             transition: width 0.2s;
         }
 
-        /* 技能區塊容器 */
         .skills-wrapper {
             display: flex;
-            gap: 10px;
+            gap: 15px;
             margin-top: 5px;
         }
 
-        /* 技能 UI */
         .skill-container {
             position: relative;
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border: 2px solid #00ffcc;
             border-radius: 8px;
             background: rgba(0, 0, 0, 0.5);
@@ -142,8 +187,8 @@
             overflow: hidden;
         }
 
-        .skill-icon { font-size: 20px; color: #00ffcc; z-index: 2; }
-        .skill-key { font-size: 10px; color: #fff; position: absolute; bottom: 1px; right: 3px; z-index: 2; }
+        .skill-icon { font-size: 28px; color: #00ffcc; z-index: 2; }
+        .skill-key { font-size: 14px; color: #fff; position: absolute; bottom: 2px; right: 4px; z-index: 2; }
 
         .cooldown-overlay {
             position: absolute;
@@ -158,11 +203,49 @@
 
         .skill-timer {
             position: absolute;
-            font-size: 16px;
+            font-size: 24px;
             color: white;
             font-weight: bold;
             z-index: 3;
             display: none;
+        }
+
+        /* 小地圖樣式 */
+        #minimap-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 200px;
+            background: rgba(0, 20, 10, 0.7);
+            border: 2px solid #00ffcc;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+        
+        #minimap-label {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            color: #00ffcc;
+            font-size: 12px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        #round-announcement {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 80px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 20px #00ffcc;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
         }
 
         #crosshair {
@@ -177,8 +260,7 @@
         #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; position: absolute; background: white; content: ''; }
         #crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; position: absolute; background: white; content: ''; }
 
-        /* 特效層 */
-        #effect-overlay, #shield-overlay, #levelup-overlay {
+        #effect-overlay, #shield-overlay, #levelup-overlay, #dash-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
@@ -193,6 +275,11 @@
             background: radial-gradient(circle, transparent 60%, rgba(0, 200, 255, 0.2) 100%);
         }
 
+        #dash-overlay {
+            background: radial-gradient(circle at center, transparent 0%, rgba(255, 255, 255, 0.4) 100%);
+            transition: opacity 0.1s;
+        }
+
         #levelup-overlay {
             display: flex;
             align-items: center;
@@ -202,7 +289,7 @@
         }
         
         .levelup-text {
-            font-size: 80px;
+            font-size: 100px;
             font-weight: 900;
             color: #ffd700;
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -214,28 +301,224 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* 選單 */
-        #menu-screen {
+        /* 選單與結算畫面通用容器 */
+        #menu-container, #game-over-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 10, 15, 0.95);
+            background: #0b0c10;
             display: flex; align-items: center; justify-content: center;
             color: white; z-index: 10; pointer-events: auto;
-            backdrop-filter: blur(5px);
         }
-        .menu-content {
+        
+        #game-over-screen { display: none; background: rgba(10, 10, 15, 0.95); backdrop-filter: blur(5px); }
+
+        /* 介紹畫面樣式 */
+        .intro-box {
             display: flex; flex-direction: column; align-items: center;
-            max-width: 800px; width: 90%;
-            border: 2px solid #00ffcc; border-radius: 15px; padding: 30px;
-            background: rgba(0, 0, 0, 0.6); box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+            max-width: 900px; width: 90%;
+            border: 2px solid #00ffcc; 
+            border-radius: 20px; 
+            padding: 40px;
+            background: #0b0c10;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
+            position: relative;
         }
-        h1 { font-size: 42px; margin: 0 0 20px 0; color: #00ffcc; text-shadow: 0 0 10px #00ffcc; text-transform: uppercase; }
-        .tutorial-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; width: 100%; margin-bottom: 30px; text-align: left; }
-        .tutorial-section h3 { color: #ffaa00; border-bottom: 1px solid #ffaa00; padding-bottom: 5px; margin-bottom: 15px; }
-        .key-badge { background: #333; border: 1px solid #666; border-radius: 4px; padding: 2px 8px; font-family: monospace; color: #fff; margin-right: 5px; font-weight: bold; }
-        .info-row { margin-bottom: 8px; font-size: 16px; color: #ddd; }
-        .enemy-tag { font-weight: bold; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); }
-        button { padding: 15px 50px; font-size: 24px; background: transparent; color: #00ffcc; border: 2px solid #00ffcc; border-radius: 5px; cursor: pointer; transition: all 0.3s; font-weight: bold; margin-top: 10px; }
-        button:hover { background: #00ffcc; color: #000; box-shadow: 0 0 20px #00ffcc; transform: scale(1.05); }
+
+        .intro-title { 
+            font-size: 48px; margin: 0 0 10px 0; 
+            color: #00ffcc; text-shadow: 0 0 15px #00ffcc; 
+            font-weight: bold; letter-spacing: 2px;
+        }
+        
+        /* 任務簡報區塊 (AI) */
+        #mission-briefing {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 30px;
+            min-height: 40px;
+            color: #ffaa00;
+            font-size: 20px;
+            font-style: italic;
+            text-shadow: 0 0 5px rgba(255, 170, 0, 0.5);
+        }
+
+        .intro-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            width: 100%;
+            margin-bottom: 40px;
+        }
+
+        .intro-section h3 {
+            font-size: 20px;
+            color: #ffaa00;
+            border-bottom: 1px solid #ffaa00;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            margin-top: 0;
+        }
+        
+        .intro-section.right h3 {
+            color: #ff4444;
+            border-bottom: 1px solid #ff4444;
+        }
+
+        .key-row {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+        }
+
+        .key-cap {
+            display: inline-block;
+            background: #222;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-family: monospace;
+            color: #fff;
+            margin-right: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .enemy-row {
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #ccc;
+        }
+
+        .enemy-tag { font-weight: bold; margin-right: 10px;}
+
+        .tip-box {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(255, 170, 0, 0.1);
+            border-left: 5px solid #ffaa00;
+            color: #ddd;
+            font-size: 18px;
+        }
+
+        .rpg-section { margin-top: 30px; }
+        .rpg-section h3 {
+            font-size: 20px; color: #ffaa00; 
+            border-bottom: 1px solid #ffaa00; padding-bottom: 10px; margin-bottom: 20px;
+        }
+
+        .start-btn-container { display: flex; justify-content: center; width: 100%; margin-top: 20px; gap: 20px; }
+
+        .main-btn { 
+            padding: 15px 60px; font-size: 28px; background: transparent; color: #00ffcc; 
+            border: 2px solid #00ffcc; border-radius: 5px; cursor: pointer; transition: all 0.3s; font-weight: bold; 
+        }
+        .main-btn:hover { background: #00ffcc; color: #000; box-shadow: 0 0 20px #00ffcc; transform: scale(1.05); }
+
+        /* 設定頁面樣式 */
+        .settings-content {
+            display: flex; flex-direction: column; align-items: center;
+            max-width: 1000px; width: 95%;
+            border: 2px solid #00ffcc; border-radius: 15px; padding: 40px;
+            background: rgba(0, 0, 0, 0.8); box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+            max-height: 95vh; overflow-y: auto;
+        }
+        
+        .settings-grid {
+            display: flex; flex-direction: column; gap: 40px; width: 100%; margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 10px;
+        }
+        
+        .setting-group { display: flex; flex-direction: column; gap: 20px; width: 100%; }
+        
+        .setting-label { 
+            color: #ffaa00; font-weight: bold; font-size: 28px; 
+            border-bottom: 1px solid #555; padding-bottom: 10px; text-align: left;
+        }
+        
+        .setting-options-row {
+            display: flex; flex-direction: row; gap: 20px; justify-content: center; flex-wrap: wrap;
+        }
+        
+        .option-btn {
+            background: rgba(0, 0, 0, 0.5); border: 1px solid #555; color: #aaa; 
+            padding: 20px; cursor: pointer; transition: all 0.2s; text-align: center; 
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            width: 250px; border-radius: 10px;
+        }
+        
+        .option-emoji { font-size: 48px; margin-bottom: 5px; }
+        .option-title { font-size: 24px; font-weight: bold; }
+        .option-desc { font-size: 14px; color: #888; line-height: 1.4; }
+
+        .option-btn:hover { background: rgba(0, 255, 204, 0.1); border-color: #888; transform: translateY(-5px); }
+        .option-btn.active { 
+            background: #00ffcc; color: black; font-weight: bold; 
+            box-shadow: 0 0 20px #00ffcc; border-color: #00ffcc; transform: scale(1.05);
+        }
+        .option-btn.active .option-desc { color: #333; }
+
+        .screen-page { display: none; width: 100%; height: 100%; align-items: center; justify-content: center; }
+        .screen-page.active { display: flex; }
+
+        /* 暫停頁面 */
+        .pause-content {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 50px;
+            border: 2px solid #ffaa00;
+            border-radius: 20px;
+            min-width: 400px;
+        }
+        .pause-title { font-size: 60px; color: #ffaa00; margin-bottom: 30px; font-weight: 900; letter-spacing: 5px; }
+
+        /* 結束戰鬥按鈕樣式 */
+        .abort-btn {
+            border-color: #ff4444 !important;
+            color: #ff4444 !important;
+            margin-top: 20px;
+        }
+        .abort-btn:hover {
+            background: #ff4444 !important;
+            color: #000 !important;
+            box-shadow: 0 0 20px #ff4444 !important;
+        }
+
+        .result-title { font-size: 64px; color: #ffaa00; text-shadow: 0 0 20px #ffaa00; margin: 30px 0; font-weight: 900; }
+        .result-stat { font-size: 32px; margin: 15px 0; color: #ddd; display: flex; justify-content: space-between; width: 60%; border-bottom: 1px solid #333; }
+        .result-value { font-weight: bold; color: #ffaa00; }
+
+        /* AI Report Style */
+        #ai-report-box {
+            margin-top: 20px;
+            width: 80%;
+            background: rgba(0, 20, 40, 0.8);
+            border: 1px solid #00ccff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: left;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+        }
+        .ai-title { color: #00ccff; font-weight: bold; font-size: 18px; margin-bottom: 5px; display: flex; align-items: center; gap: 5px;}
+        .ai-content { color: #fff; font-size: 16px; line-height: 1.5; font-family: monospace; }
+        .ai-loading { color: #aaa; font-style: italic; animation: pulse 1s infinite; }
+        
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        .gemini-btn {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            background: linear-gradient(45deg, #4285f4, #9b72cb); /* Gemini Colors */
+            border: none; color: white; margin-top: 20px; 
+            font-size: 20px; padding: 15px 30px; border-radius: 8px; cursor: pointer; transition: all 0.3s;
+        }
+        .gemini-btn:hover {
+            box-shadow: 0 0 20px rgba(155, 114, 203, 0.6);
+            transform: scale(1.05);
+        }
 
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -246,101 +529,324 @@
         <div class="hud-top">
             <div class="hud-left">
                 <div class="hud-text">得分: <span id="score">0</span></div>
+                <!-- 新增回合數顯示 -->
+                <div id="round-display">ROUND 1</div>
                 <div class="rank-text">
                     <span id="level-badge" class="level-badge">LV.1</span>
                     <span id="rank">列兵</span>
                 </div>
+                <div style="font-size: 20px; color: #aaa; margin-top: 5px;" id="mode-display">模式: 無限制</div>
             </div>
             
+            <div class="hud-center">
+                <div id="time-text">時間: 白天</div>
+                <div class="time-bar-container">
+                    <div id="time-bar"></div>
+                </div>
+            </div>
+
             <div class="status-area">
-                <!-- 血量 -->
                 <div class="bar-container health-container">
                     <div id="health-text" class="bar-text">HP 100%</div>
                     <div id="health-bar"></div>
                 </div>
                 
-                <!-- 經驗值 -->
                 <div class="bar-container xp-container">
                     <div id="xp-text" class="bar-text">XP 0 / 100</div>
                     <div id="xp-bar"></div>
                 </div>
 
                 <div class="skills-wrapper">
+                    <!-- 補血 -->
                     <div class="skill-container">
                         <div class="skill-icon">➕</div>
                         <div class="skill-key">F</div>
                         <div id="skill-heal-overlay" class="cooldown-overlay"></div>
                         <div id="skill-heal-timer" class="skill-timer">10</div>
                     </div>
+                    <!-- 護盾 -->
                     <div class="skill-container" style="border-color: #00ccff;">
                         <div class="skill-icon" style="color: #00ccff;">🛡️</div>
                         <div class="skill-key">Space</div>
                         <div id="skill-shield-overlay" class="cooldown-overlay"></div>
                         <div id="skill-shield-timer" class="skill-timer">15</div>
                     </div>
+                    <!-- 手榴彈 -->
+                    <div class="skill-container" style="border-color: #ff4400;">
+                        <div class="skill-icon" style="color: #ff4400;">💣</div>
+                        <div class="skill-key">Q</div>
+                        <div id="skill-grenade-overlay" class="cooldown-overlay"></div>
+                        <div id="skill-grenade-timer" class="skill-timer">10</div>
+                    </div>
+                    <!-- 衝刺 (新) -->
+                    <div class="skill-container" style="border-color: #ffff00;">
+                        <div class="skill-icon" style="color: #ffff00;">⚡</div>
+                        <div class="skill-key">Shift</div>
+                        <div id="skill-dash-overlay" class="cooldown-overlay"></div>
+                        <div id="skill-dash-timer" class="skill-timer">5</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 小地圖 -->
+        <div id="minimap-container">
+            <div id="minimap-label">RADAR</div>
+            <canvas id="minimap" width="200" height="200"></canvas>
+        </div>
+    </div>
+
+    <div id="round-announcement">ROUND 1</div>
+    <div id="crosshair"></div>
+    <div id="effect-overlay"></div>
+    <div id="shield-overlay"></div>
+    <div id="dash-overlay"></div>
+    <div id="levelup-overlay">
+        <div class="levelup-text">LEVEL UP!</div>
+        <div style="font-size: 32px; color: white;">傷害 & 射速提升</div>
+    </div>
+
+    <!-- 選單容器 -->
+    <div id="menu-container">
+        
+        <!-- 頁面 1: 介紹與教學 -->
+        <div id="page-intro" class="screen-page active">
+            <div class="intro-box">
+                <div class="intro-title" id="intro-title-text">幾何射擊 3D : 戰術進化</div>
+                <div id="mission-briefing"></div>
+                
+                <div class="intro-grid">
+                    <!-- 左側 -->
+                    <div class="intro-section">
+                        <h3>操作指南 (Controls)</h3>
+                        <div class="key-row">
+                            <span class="key-cap">W</span><span class="key-cap">A</span><span class="key-cap">S</span><span class="key-cap">D</span> 移動
+                        </div>
+                        <div class="key-row">
+                            <span class="key-cap">滑鼠</span> 瞄準 (按住左鍵連發)
+                        </div>
+                        <div class="key-row">
+                            <span class="key-cap">F</span> 補血 (40% HP)
+                        </div>
+                        <div class="key-row">
+                            <span class="key-cap">Space</span> 護盾 (3秒無敵)
+                        </div>
+                        <div class="key-row">
+                            <span class="key-cap">Shift</span> 戰術衝刺 (瞬移)
+                        </div>
+                        <div class="key-row">
+                            <span class="key-cap">Q</span> 破片手榴彈 (範圍)
+                        </div>
+
+                        <div class="rpg-section">
+                            <h3>成長系統 (RPG)</h3>
+                            <div style="color: #ccc; font-size: 18px; line-height: 1.6;">
+                                擊殺敵人獲得 <span style="color: #ffd700; font-weight: bold;">XP</span><br>
+                                升級可提升 <span style="color: #ff4444;">傷害</span> 與 <span style="color: #00ffcc;">連發射速</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右側 -->
+                    <div class="intro-section right">
+                        <h3>敵人情報 (XP)</h3>
+                        <div class="enemy-row">
+                            <span class="enemy-tag" style="color: #ffd700; background: rgba(255,215,0,0.1); padding: 2px 6px; border-radius: 4px;">黃色</span> 偵察兵 (10 XP)
+                        </div>
+                        <div class="enemy-row">
+                            <span class="enemy-tag" style="color: #ff4444; background: rgba(255,68,68,0.1); padding: 2px 6px; border-radius: 4px;">紅色</span> 突擊兵 (30 XP)
+                        </div>
+                        <div class="enemy-row">
+                            <span class="enemy-tag" style="color: #d000d0; background: rgba(208,0,208,0.1); padding: 2px 6px; border-radius: 4px;">紫色</span> 重裝坦克 (100 XP)
+                        </div>
+                        <div class="enemy-row">
+                            <span class="enemy-tag" style="color: #0088ff; background: rgba(0,136,255,0.1); padding: 2px 6px; border-radius: 4px;">藍色</span> 補給機 (50 XP)
+                        </div>
+
+                        <div class="tip-box">
+                            <span style="color: #ffaa00;">⚠️ 戰術提示 :</span><br>
+                            瞄準<span style="color: #ffaa00; font-weight: bold;">頭部</span>造成 <span style="color: yellow; font-weight: bold;">200%</span> 傷害 !
+                        </div>
+                    </div>
+                </div>
+
+                <div class="start-btn-container">
+                    <button class="gemini-btn" onclick="generateMissionBriefing()">✨ 生成任務代號</button>
+                    <button class="main-btn" onclick="goToSettings()">前往戰術配置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 頁面 2: 設定模式 -->
+        <div id="page-settings" class="screen-page">
+            <div class="settings-content">
+                <h1>戰術配置 (Setup)</h1>
+                <div class="settings-grid">
+                    <!-- 遊戲模式 -->
+                    <div class="setting-group">
+                        <div class="setting-label">1. 遊戲模式</div>
+                        <div class="setting-options-row">
+                            <div class="option-btn active" onclick="selectMode('endless', this)">
+                                <div class="option-emoji">💀</div>
+                                <div class="option-title">無限制</div>
+                                <div class="option-desc">敵人源源不絕，測試生存極限。</div>
+                            </div>
+                            
+                            <div class="option-btn" onclick="selectMode('round', this)">
+                                <div class="option-emoji">⚔️</div>
+                                <div class="option-title">回合制</div>
+                                <div class="option-desc">每一波敵人數量固定，清空後進入下一波。</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 時間環境 -->
+                    <div class="setting-group">
+                        <div class="setting-label">2. 時間環境</div>
+                        <div class="setting-options-row">
+                            <div class="option-btn active" onclick="selectTime('normal', this)">
+                                <div class="option-emoji">🌗</div>
+                                <div class="option-title">正常循環</div>
+                                <div class="option-desc">30秒日夜交替，夜晚敵人變強。</div>
+                            </div>
+
+                            <div class="option-btn" onclick="selectTime('day', this)">
+                                <div class="option-emoji">☀️</div>
+                                <div class="option-title">永晝</div>
+                                <div class="option-desc">視野清晰，敵人維持基礎強度。</div>
+                            </div>
+                            
+                            <div class="option-btn" onclick="selectTime('night', this)">
+                                <div class="option-emoji">🌑</div>
+                                <div class="option-title">永夜</div>
+                                <div class="option-desc">視野極差，敵人恆定強化。</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 戰鬥難度 (New) -->
+                    <div class="setting-group">
+                        <div class="setting-label">3. 戰鬥難度</div>
+                        <div class="setting-options-row">
+                            <div class="option-btn" onclick="selectDifficulty('easy', this)">
+                                <div class="option-emoji">🟢</div>
+                                <div class="option-title">簡單</div>
+                                <div class="option-desc">敵人較弱，不從背後生成。</div>
+                            </div>
+                            
+                            <div class="option-btn active" onclick="selectDifficulty('normal', this)">
+                                <div class="option-emoji">🟡</div>
+                                <div class="option-title">普通</div>
+                                <div class="option-desc">標準強度，不從背後生成。</div>
+                            </div>
+
+                            <div class="option-btn" onclick="selectDifficulty('hard', this)">
+                                <div class="option-emoji">🔴</div>
+                                <div class="option-title">困難</div>
+                                <div class="option-desc">標準強度，敵人全方位生成。</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 20px; width: 100%; justify-content: center;">
+                    <button class="main-btn" style="border-color: #aaa; color: #aaa;" onclick="goToIntro()">返 回</button>
+                    <button id="start-btn" class="main-btn">確 認 出 擊</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 頁面 3: 暫停頁面 (獨立) -->
+        <div id="page-pause" class="screen-page">
+            <div class="pause-content">
+                <!-- 主暫停選單 -->
+                <div id="pause-main-menu" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                    <div class="pause-title">戰術暫停 (PAUSED)</div>
+                    <button id="resume-btn" class="main-btn">繼 續 任 務</button>
+                    <button class="gemini-btn" onclick="askAiForTactics()">✨ 請求戰術指導</button>
+                    <div id="ai-tactics-box" style="margin-top: 20px; color: #fff; max-width: 400px; display: none; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px;">
+                        <div id="ai-tactics-content">正在連線至總部...</div>
+                    </div>
+                    
+                    <!-- 結束戰鬥按鈕 -->
+                    <button class="main-btn abort-btn" onclick="showAbortConfirm()">結束戰鬥 (Abort)</button>
+                </div>
+
+                <!-- 確認結束選單 (預設隱藏) -->
+                <div id="pause-confirm-menu" style="display: none; flex-direction: column; align-items: center; width: 100%;">
+                    <h2 style="color: #ff4444; font-size: 36px; margin-bottom: 20px;">⚠️ 確認放棄任務？</h2>
+                    <p style="color: #ccc; font-size: 18px; margin-bottom: 30px;">目前的進度將會遺失，無法復原。</p>
+                    <div style="display: flex; gap: 20px;">
+                        <button class="main-btn abort-btn" onclick="confirmAbort()">確 認 結 束</button>
+                        <button class="main-btn" onclick="cancelAbort()">取 消</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="crosshair"></div>
-    <div id="effect-overlay"></div>
-    <div id="shield-overlay"></div>
-    <div id="levelup-overlay">
-        <div class="levelup-text">LEVEL UP!</div>
-        <div style="font-size: 24px; color: white;">傷害 & 射速提升</div>
-    </div>
-
-    <div id="menu-screen">
-        <div class="menu-content">
-            <h1>幾何射擊 3D：戰術進化</h1>
+    <!-- 結算畫面 -->
+    <div id="game-over-screen">
+        <div class="settings-content">
+            <h1 style="color: #ff4444;">任務失敗 (Mission Failed)</h1>
             
-            <div class="tutorial-grid">
-                <div class="tutorial-section">
-                    <h3>操作指南 (Controls)</h3>
-                    <div class="info-row"><span class="key-badge">W</span><span class="key-badge">A</span><span class="key-badge">S</span><span class="key-badge">D</span> 移動</div>
-                    <div class="info-row"><span class="key-badge">滑鼠</span> 瞄準 (按住左鍵連發)</div>
-                    <div class="info-row"><span class="key-badge">F</span> 補血 (40% HP)</div>
-                    <div class="info-row"><span class="key-badge">Space</span> 護盾 (3秒無敵)</div>
-                    
-                    <h3 style="margin-top: 20px; color: #ffd700; border-color: #ffd700;">成長系統 (RPG)</h3>
-                    <div class="info-row">
-                        擊殺敵人獲得 <span style="color: #ffd700;">XP</span><br>
-                        升級可提升 <span style="color: #ff4444;">傷害</span> 與 <span style="color: #00ffcc;">連發射速</span>
-                    </div>
-                </div>
-
-                <div class="tutorial-section">
-                    <h3 style="color: #ff4444; border-color: #ff4444;">敵人情報 (XP)</h3>
-                    <div class="info-row"><span class="enemy-tag" style="color: #ffff00;">黃色</span> 偵察兵 (10 XP)</div>
-                    <div class="info-row"><span class="enemy-tag" style="color: #ff4444;">紅色</span> 突擊兵 (30 XP)</div>
-                    <div class="info-row"><span class="enemy-tag" style="color: #d000d0;">紫色</span> 重裝坦克 (100 XP)</div>
-                    <div class="info-row"><span class="enemy-tag" style="color: #0088ff;">藍色</span> 補給機 (50 XP)</div>
-                    
-                    <div style="margin-top: 20px; padding: 10px; background: rgba(255, 170, 0, 0.2); border-left: 4px solid #ffaa00;">
-                        <strong>⚠️ 戰術提示：</strong><br>
-                        瞄準<span style="color: #ffaa00;">頭部</span>造成 <span style="color: yellow;">200%</span> 傷害！
-                    </div>
-                </div>
+            <div class="result-title" id="final-rank">列兵</div>
+            
+            <div class="result-stat">
+                <span>最終得分</span>
+                <span class="result-value" id="final-score">0</span>
+            </div>
+            <div class="result-stat">
+                <span>最終等級</span>
+                <span class="result-value" id="final-level">LV.1</span>
+            </div>
+            <div class="result-stat">
+                <span>擊殺數</span>
+                <span class="result-value" id="final-kills">0</span>
             </div>
 
-            <button id="start-btn">開始任務</button>
+            <!-- AI 戰報區塊 -->
+            <div id="ai-report-box">
+                <div class="ai-title">✨ 總部戰術評估 (HQ Analysis)</div>
+                <div id="ai-report-content" class="ai-content ai-loading">正在接收戰場數據...</div>
+            </div>
+            
+            <div style="margin-top: 30px; width: 100%; text-align: center;">
+                <button class="main-btn" onclick="backToMenu()">返回基地 (Return to Base)</button>
+            </div>
         </div>
     </div>
 
     <script>
+        // --- Gemini API Key ---
+        const apiKey = ""; 
+
         // --- 核心變數 ---
         let camera, scene, renderer;
+        let ambientLight, hemiLight, fog;
         let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
         let prevTime = performance.now();
         const velocity = new THREE.Vector3();
         const direction = new THREE.Vector3();
 
+        // 遊戲設定
+        let selectedGameMode = 'endless'; 
+        let selectedTimeMode = 'normal';
+        let selectedDifficulty = 'normal'; // easy, normal, hard
+        
         // 遊戲狀態
         let isGameActive = false;
         let score = 0;
         let health = 100;
+        let killCount = 0;
+        let isNight = false;
+        let cycleTimer = 0;
         
+        // 回合制變數
+        let roundNumber = 1;
+        let enemiesSpawnedInRound = 0;
+        let enemiesToSpawnInRound = 0;
+        let isRoundWaiting = false;
+
         // RPG 數值系統
         let playerLevel = 1;
         let currentXp = 0;
@@ -348,10 +854,10 @@
         let baseDamage = 1; 
         let currentDamage = 1;
         
-        // 射擊系統 (連發)
+        // 射擊系統
         let isMouseDown = false;
         let lastShotTime = 0;
-        let baseFireRate = 400; // 初始射速 (毫秒)
+        let baseFireRate = 400; 
         let currentFireRate = 400;
 
         // 生成與技能
@@ -367,9 +873,17 @@
         const SHIELD_DURATION = 3000; 
         let lastShieldUseTime = -SKILL_SHIELD_CD;
         let isShieldActive = false;
+        
+        const SKILL_GRENADE_CD = 10000; // 改為10秒
+        let lastGrenadeUseTime = -SKILL_GRENADE_CD;
+
+        // 衝刺相關
+        const SKILL_DASH_CD = 5000; // 5秒冷卻
+        let lastDashUseTime = -SKILL_DASH_CD;
 
         // 物件
         const bullets = [];
+        const grenades = []; 
         const enemies = [];
         const particles = []; 
 
@@ -382,65 +896,245 @@
         const xpBarEl = document.getElementById('xp-bar');
         const xpTextEl = document.getElementById('xp-text');
         
-        const menuScreen = document.getElementById('menu-screen');
+        const menuContainer = document.getElementById('menu-container');
+        const pageIntro = document.getElementById('page-intro');
+        const pageSettings = document.getElementById('page-settings');
+        const pagePause = document.getElementById('page-pause');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        
         const startBtn = document.getElementById('start-btn');
+        const resumeBtn = document.getElementById('resume-btn');
+        
         const effectOverlay = document.getElementById('effect-overlay');
         const shieldOverlay = document.getElementById('shield-overlay');
+        const dashOverlay = document.getElementById('dash-overlay');
         const levelupOverlay = document.getElementById('levelup-overlay');
 
         const healOverlay = document.getElementById('skill-heal-overlay');
         const healTimer = document.getElementById('skill-heal-timer');
         const shieldUiOverlay = document.getElementById('skill-shield-overlay');
         const shieldTimer = document.getElementById('skill-shield-timer');
+        const grenadeOverlay = document.getElementById('skill-grenade-overlay');
+        const grenadeTimer = document.getElementById('skill-grenade-timer');
+        const dashUiOverlay = document.getElementById('skill-dash-overlay');
+        const dashTimer = document.getElementById('skill-dash-timer');
+        
+        const modeDisplayEl = document.getElementById('mode-display');
+        const roundDisplayEl = document.getElementById('round-display'); // 新增引用
+        const timeTextEl = document.getElementById('time-text');
+        const timeBarEl = document.getElementById('time-bar');
+        const roundAnnounceEl = document.getElementById('round-announcement');
 
-        // 敵人配置 (增加 xpReward)
+        // AI DOM
+        const aiReportContent = document.getElementById('ai-report-content');
+        const aiTacticsBox = document.getElementById('ai-tactics-box');
+        const aiTacticsContent = document.getElementById('ai-tactics-content');
+        const missionBriefingEl = document.getElementById('mission-briefing');
+        const introTitleEl = document.getElementById('intro-title-text');
+
+        // 小地圖 Context
+        const minimapCanvas = document.getElementById('minimap');
+        const minimapCtx = minimapCanvas.getContext('2d');
+
+        // 敵人配置
         const EnemyTypes = {
-            YELLOW: { color: 0xffff00, speed: 0.08, hp: 2, score: 10, xp: 10, scale: 0.8, maxHp: 2 },
-            RED:    { color: 0xff0000, speed: 0.05, hp: 4, score: 30, xp: 30, scale: 1.0, maxHp: 4 },
-            PURPLE: { color: 0x800080, speed: 0.03, hp: 8, score: 100, xp: 100, scale: 1.5, maxHp: 8 },
-            BLUE:   { color: 0x0088ff, speed: 0.06, hp: 3, score: 50, xp: 50, scale: 0.9, isHealer: true, maxHp: 3 } 
+            YELLOW: { color: 0xffff00, speed: 0.05, hp: 2, score: 10, xp: 10, scale: 0.8, maxHp: 2 },
+            RED:    { color: 0xff0000, speed: 0.03, hp: 4, score: 30, xp: 30, scale: 1.0, maxHp: 4 },
+            PURPLE: { color: 0x800080, speed: 0.015, hp: 8, score: 100, xp: 100, scale: 1.5, maxHp: 8 },
+            BLUE:   { color: 0x0088ff, speed: 0.04, hp: 3, score: 50, xp: 50, scale: 0.9, isHealer: true, maxHp: 3 } 
         };
 
-        // 稱號列表
         const RankTitles = [
-            { level: 1, title: "列兵" },
-            { level: 3, title: "下士" },
-            { level: 6, title: "中尉" },
-            { level: 10, title: "少校" },
-            { level: 15, title: "上校" },
-            { level: 20, title: "少將" },
-            { level: 30, title: "戰神" }
+            { level: 1, title: "列兵" }, { level: 3, title: "下士" }, { level: 6, title: "中尉" },
+            { level: 10, title: "少校" }, { level: 15, title: "上校" }, { level: 20, title: "少將" }, { level: 30, title: "戰神" }
         ];
+
+        // --- Gemini API Call ---
+        async function callGeminiAPI(prompt) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }]
+            };
+
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            for (let i = 0; i < 5; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    const data = await response.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "連線不穩定，無法接收總部訊息。";
+                } catch (e) {
+                    if (i === 4) return "無法連線至戰術 AI 伺服器。";
+                    await new Promise(r => setTimeout(r, delays[i]));
+                }
+            }
+        }
+
+        async function generateMissionBriefing() {
+            missionBriefingEl.innerText = "正在連線加密頻道...";
+            const prompt = `
+            Task: Generate a cool, short sci-fi mission title and a 1-sentence briefing in Traditional Chinese (Taiwan) for a shooter game.
+            Format: "Title|Briefing"
+            Example: "行動代號：紅蓮|敵軍機甲部隊集結，務必全數殲滅。"
+            `;
+            
+            const result = await callGeminiAPI(prompt);
+            try {
+                if (result.includes("|")) {
+                    const parts = result.split("|");
+                    introTitleEl.innerText = parts[0];
+                    missionBriefingEl.innerText = parts[1];
+                } else {
+                    missionBriefingEl.innerText = result;
+                }
+            } catch (e) {
+                missionBriefingEl.innerText = "加密頻道連線失敗。";
+            }
+        }
+
+        async function generateBattleReport(score, level, kills, rank) {
+            aiReportContent.classList.add('ai-loading');
+            aiReportContent.innerText = "正在接收總部戰術評估...";
+            
+            const prompt = `
+            Context: A sci-fi 3D shooter game battle just ended. The player died.
+            Player Stats:
+            - Rank: ${rank}
+            - Level: ${level}
+            - Score: ${score}
+            - Kills: ${killCount}
+            - Difficulty: ${selectedDifficulty}
+            
+            Task: Act as a strict but fair military AI commander. Write a short battle report (max 2 sentences) in Traditional Chinese (Taiwan).
+            - If score < 500, be harsh.
+            - If score > 2000, praise.
+            - Mention difficulty if relevant.
+            `;
+
+            const report = await callGeminiAPI(prompt);
+            aiReportContent.classList.remove('ai-loading');
+            aiReportContent.innerText = report;
+        }
+
+        async function askAiForTactics() {
+            aiTacticsBox.style.display = 'block';
+            aiTacticsContent.innerText = "正在分析戰場數據...";
+            
+            const prompt = `
+            Context: The player paused a sci-fi shooter game to ask for advice.
+            Current Status:
+            - Health: ${health}%
+            - Level: ${playerLevel}
+            - Enemies nearby: ${enemies.length}
+            - Is Night: ${isNight}
+            - Difficulty: ${selectedDifficulty}
+            
+            Task: Give 1 short, tactical advice in Traditional Chinese (max 15 words).
+            `;
+
+            const advice = await callGeminiAPI(prompt);
+            aiTacticsContent.innerText = advice;
+        }
+
+        // --- UI 邏輯 ---
+        window.goToSettings = function() {
+            pageIntro.classList.remove('active');
+            pageSettings.classList.add('active');
+        };
+
+        window.goToIntro = function() {
+            pageSettings.classList.remove('active');
+            pageIntro.classList.add('active');
+        };
+
+        window.selectMode = function(mode, btn) {
+            selectedGameMode = mode;
+            document.querySelectorAll('.setting-group:nth-child(1) .option-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        };
+
+        window.selectTime = function(mode, btn) {
+            selectedTimeMode = mode;
+            document.querySelectorAll('.setting-group:nth-child(2) .option-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        };
+
+        window.selectDifficulty = function(mode, btn) {
+            selectedDifficulty = mode;
+            document.querySelectorAll('.setting-group:nth-child(3) .option-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        };
+
+        window.backToMenu = function() {
+            // 強制重置遊戲狀態 (分數、血量、敵人清空)
+            resetGame();
+
+            gameOverScreen.style.display = 'none';
+            menuContainer.style.display = 'flex';
+            pageIntro.classList.remove('active');
+            pageSettings.classList.add('active');
+            pagePause.classList.remove('active');
+            
+            // 重置暫停選單狀態
+            document.getElementById('pause-main-menu').style.display = 'flex';
+            document.getElementById('pause-confirm-menu').style.display = 'none';
+        };
+
+        // --- 暫停選單邏輯 ---
+        window.showAbortConfirm = function() {
+            document.getElementById('pause-main-menu').style.display = 'none';
+            document.getElementById('pause-confirm-menu').style.display = 'flex';
+        };
+
+        window.cancelAbort = function() {
+            document.getElementById('pause-main-menu').style.display = 'flex';
+            document.getElementById('pause-confirm-menu').style.display = 'none';
+        };
+
+        window.confirmAbort = function() {
+            // 強制結束並返回
+            isGameActive = false;
+            document.exitPointerLock(); // 確保釋放滑鼠
+            backToMenu(); // 直接返回設定頁面
+        };
 
         init();
         animate();
 
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x111111);
-            scene.fog = new THREE.Fog(0x111111, 0, 75); 
+            scene.background = new THREE.Color(0x87CEEB); 
+            fog = new THREE.Fog(0x87CEEB, 0, 75);
+            scene.fog = fog;
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.y = 1.6; 
             camera.rotation.order = "YXZ"; 
 
-            const ambientLight = new THREE.AmbientLight(0x606060); 
+            ambientLight = new THREE.AmbientLight(0x606060); 
             scene.add(ambientLight);
             
-            const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
-            light.position.set(0.5, 1, 0.75);
-            scene.add(light);
+            hemiLight = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
+            hemiLight.position.set(0.5, 1, 0.75);
+            scene.add(hemiLight);
 
             const pointLight = new THREE.PointLight(0xffffff, 0.8, 50);
             pointLight.position.set(0, 10, 0);
             scene.add(pointLight);
 
-            const floorGeometry = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE, 100, 100);
-            floorGeometry.rotateX(-Math.PI / 2);
-            const floorMaterial = new THREE.MeshBasicMaterial({ 
-                color: 0x00ffcc, wireframe: true, transparent: true, opacity: 0.1
+            // 實心草地地板
+            const floorGeometry = new THREE.BoxGeometry(MAP_SIZE, 5, MAP_SIZE);
+            const floorMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0x1a472a 
             });
             const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.position.y = -2.5; 
             scene.add(floor);
 
             createBoundaries();
@@ -453,24 +1147,63 @@
             window.addEventListener('resize', onWindowResize);
             document.addEventListener('keydown', onKeyDown);
             document.addEventListener('keyup', onKeyUp);
-            // 改為監聽按下與放開，實現連發
             document.addEventListener('mousedown', (e) => { if(e.button === 0) isMouseDown = true; });
             document.addEventListener('mouseup', () => { isMouseDown = false; });
             
+            // 開始按鈕 (加入錯誤捕捉)
             startBtn.addEventListener('click', () => {
-                document.body.requestPointerLock();
+                Promise.resolve(document.body.requestPointerLock()).catch(err => {
+                    console.warn('Pointer lock failed:', err);
+                });
+            });
+            
+            // 繼續按鈕
+            resumeBtn.addEventListener('click', () => {
+                Promise.resolve(document.body.requestPointerLock()).catch(err => {
+                    console.warn('Pointer lock failed:', err);
+                });
             });
 
             document.addEventListener('pointerlockchange', () => {
                 if (document.pointerLockElement === document.body) {
+                    // --- 鎖定時：進入遊戲 ---
+                    if (!isGameActive && score === 0 && roundNumber === 1 && enemies.length === 0) {
+                        resetGame();
+                    }
                     isGameActive = true;
-                    menuScreen.style.display = 'none';
+                    
+                    // 隱藏所有選單介面
+                    menuContainer.style.display = 'none';
+                    gameOverScreen.style.display = 'none';
+                    
+                    // 關鍵修復：進入遊戲後，移除所有選單頁面的 active 狀態
+                    // 這樣下次按 ESC 時，邏輯就不會誤以為還在設定頁面
+                    pageIntro.classList.remove('active');
+                    pageSettings.classList.remove('active');
+                    pagePause.classList.remove('active');
+
                     if (health <= 0) resetGame();
                 } else {
+                    // --- 解鎖時：暫停遊戲 ---
                     isGameActive = false;
-                    isMouseDown = false; // 暫停時停止射擊
-                    menuScreen.style.display = 'flex';
-                    startBtn.innerText = "繼續戰鬥";
+                    isMouseDown = false; 
+                    
+                    // 只有當玩家還活著時才顯示暫停選單
+                    if (health > 0) {
+                        menuContainer.style.display = 'flex';
+                        
+                        // 強制顯示暫停頁面
+                        pageIntro.classList.remove('active');
+                        pageSettings.classList.remove('active');
+                        pagePause.classList.add('active');
+                        
+                        // 重置暫停選單為初始狀態
+                        document.getElementById('pause-main-menu').style.display = 'flex';
+                        document.getElementById('pause-confirm-menu').style.display = 'none';
+                        
+                        // 隱藏之前的戰術建議
+                        aiTacticsBox.style.display = 'none';
+                    }
                 }
             });
 
@@ -486,9 +1219,15 @@
         }
 
         function createBoundaries() {
-            const wallMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, opacity: 0.15, side: THREE.DoubleSide });
+            const wallMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x00ffcc, 
+                transparent: true, 
+                opacity: 0.3, 
+                side: THREE.DoubleSide,
+                shininess: 30
+            });
             const wallHeight = 20;
-            const wallGeo = new THREE.PlaneGeometry(MAP_SIZE, wallHeight, 20, 5);
+            const wallGeo = new THREE.PlaneGeometry(MAP_SIZE, wallHeight);
             
             const wallN = new THREE.Mesh(wallGeo, wallMaterial); wallN.position.set(0, wallHeight/2, -MAP_SIZE/2); scene.add(wallN);
             const wallS = new THREE.Mesh(wallGeo, wallMaterial); wallS.position.set(0, wallHeight/2, MAP_SIZE/2); scene.add(wallS);
@@ -499,49 +1238,69 @@
         function resetGame() {
             score = 0;
             health = 100;
+            killCount = 0;
             
-            // 重置 RPG 數值
             playerLevel = 1;
             currentXp = 0;
             xpToNextLevel = 100;
-            updateStats(); // 重置傷害與射速
+            updateStats(); 
+
+            roundNumber = 1;
+            enemiesSpawnedInRound = 0;
+            enemiesToSpawnInRound = calculateEnemiesForRound(1);
+            isRoundWaiting = false;
+
+            cycleTimer = 0;
+            updateEnvironment(0); 
 
             lastHealUseTime = -SKILL_HEAL_CD;
             lastShieldUseTime = -SKILL_SHIELD_CD;
+            lastGrenadeUseTime = -SKILL_GRENADE_CD;
+            lastDashUseTime = -SKILL_DASH_CD;
             isShieldActive = false;
             shieldOverlay.style.opacity = 0;
+            
             updateUI();
             
             enemies.forEach(e => scene.remove(e.group));
             enemies.length = 0;
             bullets.forEach(b => scene.remove(b.mesh));
             bullets.length = 0;
+            grenades.forEach(g => scene.remove(g.mesh));
+            grenades.length = 0;
 
             camera.position.set(0, 1.6, 0);
             camera.rotation.set(0, 0, 0);
             effectOverlay.style.opacity = 0;
+
+            if (selectedGameMode === 'round') {
+                showRoundAnnouncement(1);
+            }
         }
 
-        // 根據等級更新數值
+        function calculateEnemiesForRound(round) {
+            return 5 + (round - 1) * 3;
+        }
+
+        function showRoundAnnouncement(round) {
+            roundAnnounceEl.innerText = `ROUND ${round}`;
+            roundAnnounceEl.style.opacity = 1;
+            setTimeout(() => {
+                roundAnnounceEl.style.opacity = 0;
+            }, 3000);
+        }
+
         function updateStats() {
-            // 傷害成長：每級增加 0.2 倍
             currentDamage = baseDamage + (playerLevel - 1) * 0.2;
-            
-            // 射速成長：每級減少 5% 間隔，最低 100ms
-            // Lv1: 400ms, Lv5: 325ms, Lv10: 250ms, Lv20: 150ms
             currentFireRate = Math.max(80, baseFireRate * Math.pow(0.95, playerLevel - 1));
         }
 
         function gainXp(amount) {
             currentXp += amount;
-            // 檢查升級
             while (currentXp >= xpToNextLevel) {
                 currentXp -= xpToNextLevel;
                 playerLevel++;
-                
-                // 下一級所需經驗成長 (1.2倍)
                 xpToNextLevel = Math.floor(xpToNextLevel * 1.2);
-                
                 updateStats();
                 showLevelUpEffect();
             }
@@ -550,13 +1309,278 @@
 
         function showLevelUpEffect() {
             levelupOverlay.style.opacity = 1;
-            // 2秒後淡出
-            setTimeout(() => {
-                levelupOverlay.style.opacity = 0;
-            }, 2000);
+            setTimeout(() => { levelupOverlay.style.opacity = 0; }, 2000);
+            healPlayer(100); 
+        }
+
+        // --- 環境與時間系統 ---
+        function updateEnvironment(dt) {
+            cycleTimer += dt;
+            if (cycleTimer > 60) cycleTimer -= 60;
+
+            let barPercentage = 0;
+            if (selectedTimeMode === 'normal') {
+                if (cycleTimer <= 30) {
+                    barPercentage = (cycleTimer / 30) * 100;
+                    timeTextEl.innerText = "時間: 白天";
+                    timeTextEl.style.color = "#fff";
+                    timeBarEl.style.background = "linear-gradient(90deg, #fff, #aaa)";
+                } else {
+                    barPercentage = ((cycleTimer - 30) / 30) * 100;
+                    timeTextEl.innerText = "時間: 夜晚 (警戒)";
+                    timeTextEl.style.color = "#ff4444";
+                    timeBarEl.style.background = "linear-gradient(90deg, #ff4444, #500)";
+                }
+                isNight = cycleTimer > 30;
+            } else if (selectedTimeMode === 'day') {
+                barPercentage = 100;
+                timeTextEl.innerText = "環境: 永晝";
+                timeTextEl.style.color = "#ffff00";
+                timeBarEl.style.background = "#ffff00";
+                isNight = false;
+            } else {
+                barPercentage = 100;
+                timeTextEl.innerText = "環境: 永夜";
+                timeTextEl.style.color = "#ff0000";
+                timeBarEl.style.background = "#ff0000";
+                isNight = true;
+            }
+            timeBarEl.style.width = barPercentage + '%';
+
+            let bgColor, fogColor, fogDensity;
             
-            // 播放升級音效 (這裡用特效代替)
-            healPlayer(100); // 升級回滿血獎勵
+            if (selectedTimeMode === 'day') {
+                bgColor = new THREE.Color(0x87CEEB); 
+                fogColor = 0x87CEEB;
+                fogDensity = 0.005; 
+                hemiLight.intensity = 1.2;
+            } else if (selectedTimeMode === 'night') {
+                bgColor = new THREE.Color(0x000000);
+                fogColor = 0x000000;
+                fogDensity = 0.05;
+                hemiLight.intensity = 0.2;
+            } else {
+                if (isNight) {
+                    bgColor = new THREE.Color(0x050510); 
+                    fogColor = 0x050510;
+                    fogDensity = 0.035;
+                    hemiLight.intensity = 0.3;
+                } else {
+                    bgColor = new THREE.Color(0x87CEEB); 
+                    fogColor = 0x87CEEB;
+                    fogDensity = 0.005; 
+                    hemiLight.intensity = 1.0;
+                }
+            }
+
+            if (scene.background) {
+                scene.background.lerp(bgColor, 0.05);
+            } else {
+                scene.background = bgColor;
+            }
+            
+            if (scene.fog) {
+                scene.fog.color.lerp(new THREE.Color(fogColor), 0.05);
+                scene.fog.density = THREE.MathUtils.lerp(scene.fog.density, fogDensity, 0.05);
+            }
+        }
+
+        // --- 小地圖繪製 ---
+        function updateMiniMap() {
+            // 清空畫布
+            minimapCtx.clearRect(0, 0, 200, 200);
+            
+            const mapSize = MAP_SIZE; // 200
+            const canvasSize = 200;
+            const scale = canvasSize / mapSize;
+            
+            // 繪製敵人
+            enemies.forEach(e => {
+                const x = (e.group.position.x + mapSize/2) * scale;
+                const y = (e.group.position.z + mapSize/2) * scale;
+                
+                minimapCtx.fillStyle = '#ff0000';
+                minimapCtx.beginPath();
+                minimapCtx.arc(x, y, 3, 0, Math.PI * 2);
+                minimapCtx.fill();
+            });
+            
+            // 繪製玩家 (箭頭)
+            const px = (camera.position.x + mapSize/2) * scale;
+            const py = (camera.position.z + mapSize/2) * scale;
+            
+            minimapCtx.save();
+            minimapCtx.translate(px, py);
+            // Three.js 旋轉是逆時針，Canvas 是順時針，且起始角度不同，需調整
+            minimapCtx.rotate(-camera.rotation.y); 
+            
+            minimapCtx.fillStyle = '#00ffcc';
+            minimapCtx.beginPath();
+            minimapCtx.moveTo(0, -6);
+            minimapCtx.lineTo(4, 4);
+            minimapCtx.lineTo(0, 2);
+            minimapCtx.lineTo(-4, 4);
+            minimapCtx.closePath();
+            minimapCtx.fill();
+            
+            minimapCtx.restore();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const now = performance.now();
+            const delta = (now - prevTime) / 1000;
+            prevTime = now;
+
+            // UI 更新 (技能冷卻)
+            const timeSinceHeal = now - lastHealUseTime;
+            healOverlay.style.height = timeSinceHeal < SKILL_HEAL_CD ? (100 - (timeSinceHeal / SKILL_HEAL_CD * 100)) + '%' : '0%';
+            healTimer.style.display = timeSinceHeal < SKILL_HEAL_CD ? 'block' : 'none';
+            if(healTimer.style.display === 'block') healTimer.innerText = Math.ceil((SKILL_HEAL_CD - timeSinceHeal) / 1000);
+
+            const timeSinceShield = now - lastShieldUseTime;
+            shieldUiOverlay.style.height = timeSinceShield < SKILL_SHIELD_CD ? (100 - (timeSinceShield / SKILL_SHIELD_CD * 100)) + '%' : '0%';
+            shieldTimer.style.display = timeSinceShield < SKILL_SHIELD_CD ? 'block' : 'none';
+            if(shieldTimer.style.display === 'block') shieldTimer.innerText = Math.ceil((SKILL_SHIELD_CD - timeSinceShield) / 1000);
+
+            const timeSinceGrenade = now - lastGrenadeUseTime;
+            grenadeOverlay.style.height = timeSinceGrenade < SKILL_GRENADE_CD ? (100 - (timeSinceGrenade / SKILL_GRENADE_CD * 100)) + '%' : '0%';
+            grenadeTimer.style.display = timeSinceGrenade < SKILL_GRENADE_CD ? 'block' : 'none';
+            if(grenadeTimer.style.display === 'block') grenadeTimer.innerText = Math.ceil((SKILL_GRENADE_CD - timeSinceGrenade) / 1000);
+
+            const timeSinceDash = now - lastDashUseTime;
+            dashUiOverlay.style.height = timeSinceDash < SKILL_DASH_CD ? (100 - (timeSinceDash / SKILL_DASH_CD * 100)) + '%' : '0%';
+            dashTimer.style.display = timeSinceDash < SKILL_DASH_CD ? 'block' : 'none';
+            if(dashTimer.style.display === 'block') dashTimer.innerText = Math.ceil((SKILL_DASH_CD - timeSinceDash) / 1000);
+
+            if (!isGameActive) return;
+
+            updateEnvironment(delta);
+            updateMiniMap(); // 更新小地圖
+
+            if (isMouseDown && now - lastShotTime > currentFireRate) {
+                shoot();
+                lastShotTime = now;
+            }
+
+            const speed = 150.0; 
+            velocity.x -= velocity.x * 10.0 * delta; velocity.z -= velocity.z * 10.0 * delta;
+            direction.z = Number(moveForward) - Number(moveBackward); direction.x = Number(moveRight) - Number(moveLeft);
+            direction.normalize();
+            if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
+            if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
+            
+            const rotation = camera.rotation.y;
+            const dx = (velocity.z * delta * Math.sin(rotation) - velocity.x * delta * Math.cos(rotation));
+            const dz = (velocity.z * delta * Math.cos(rotation) + velocity.x * delta * Math.sin(rotation));
+            const nextX = camera.position.x + dx; const nextZ = camera.position.z + dz;
+
+            if (nextX > -BOUNDARY_LIMIT && nextX < BOUNDARY_LIMIT) camera.position.x = nextX; else { velocity.x = 0; camera.position.x = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, nextX)); }
+            if (nextZ > -BOUNDARY_LIMIT && nextZ < BOUNDARY_LIMIT) camera.position.z = nextZ; else { velocity.z = 0; camera.position.z = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, nextZ)); }
+            camera.position.y = 1.6;
+
+            // 子彈物理
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i]; b.mesh.position.add(b.velocity); b.life--;
+                if (b.life <= 0) { scene.remove(b.mesh); bullets.splice(i, 1); }
+            }
+
+            // 手榴彈物理
+            for (let i = grenades.length - 1; i >= 0; i--) {
+                const g = grenades[i];
+                g.velocity.y -= 20.0 * delta; 
+                g.mesh.position.add(g.velocity.clone().multiplyScalar(delta)); 
+                
+                if (g.mesh.position.y <= 0.2) {
+                    explodeGrenade(g.mesh.position);
+                    scene.remove(g.mesh);
+                    grenades.splice(i, 1);
+                }
+            }
+
+            // 敵人生成
+            if (selectedGameMode === 'endless') {
+                if (now - lastEnemySpawnTime > enemySpawnRate) {
+                    spawnEnemy(); 
+                    lastEnemySpawnTime = now;
+                    if (enemySpawnRate > 500) enemySpawnRate -= 20; 
+                }
+            } else {
+                if (enemiesSpawnedInRound < enemiesToSpawnInRound) {
+                    if (now - lastEnemySpawnTime > 1000) {
+                        spawnEnemy();
+                        lastEnemySpawnTime = now;
+                        enemiesSpawnedInRound++;
+                    }
+                } 
+                else if (enemies.length === 0 && !isRoundWaiting) {
+                    isRoundWaiting = true;
+                    setTimeout(() => {
+                        roundNumber++;
+                        enemiesSpawnedInRound = 0;
+                        enemiesToSpawnInRound = calculateEnemiesForRound(roundNumber);
+                        showRoundAnnouncement(roundNumber);
+                        isRoundWaiting = false;
+                        healPlayer(20);
+                    }, 3000); 
+                }
+            }
+
+            // 敵人行為
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                const lookDir = new THREE.Vector3().subVectors(camera.position, e.group.position); lookDir.y = 0; lookDir.normalize();
+                e.group.position.add(lookDir.multiplyScalar(e.speed));
+                e.group.lookAt(camera.position.x, e.group.position.y, camera.position.z);
+
+                const distToPlayer = Math.hypot(e.group.position.x - camera.position.x, e.group.position.z - camera.position.z);
+                if (distToPlayer < 1.5) {
+                    takeDamage(20); createExplosion(e.group.position, e.type.color, false);
+                    scene.remove(e.group); enemies.splice(i, 1); continue;
+                }
+
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    const b = bullets[j];
+                    const distXZ = Math.hypot(b.mesh.position.x - e.group.position.x, b.mesh.position.z - e.group.position.z);
+                    const bulletY = b.mesh.position.y;
+                    const enemyBottomY = e.group.position.y;
+                    const enemyTopY = enemyBottomY + (2.0 * e.type.scale);
+
+                    if (distXZ < e.type.scale + 0.5 && bulletY > enemyBottomY && bulletY < enemyTopY) { 
+                        const relY = b.mesh.position.y - e.group.position.y;
+                        const isHeadshot = relY > (1.1 * e.type.scale);
+                        const damage = currentDamage * (isHeadshot ? 2 : 1);
+
+                        createExplosion(b.mesh.position, isHeadshot ? 0xffff00 : 0xffffaa, isHeadshot); 
+                        scene.remove(b.mesh); bullets.splice(j, 1);
+                        
+                        e.currentHp -= damage;
+                        e.hpBarMesh.scale.x = Math.max(0, e.currentHp / e.maxHp);
+
+                        if (e.currentHp <= 0) {
+                            createExplosion(e.group.position, e.type.color, isHeadshot); 
+                            if (e.type.isHealer) healPlayer(20);
+                            scene.remove(e.group); enemies.splice(i, 1);
+                            
+                            score += e.type.score * (isHeadshot ? 2 : 1);
+                            killCount++;
+                            gainXp(e.type.xp); 
+                            updateUI();
+                        } else {
+                            e.group.position.add(lookDir.multiplyScalar(-2));
+                        }
+                        break;
+                    }
+                }
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i]; p.mesh.position.add(p.velocity); p.life--; p.mesh.scale.multiplyScalar(0.9);
+                if (p.life <= 0) { scene.remove(p.mesh); particles.splice(i, 1); }
+            }
+
+            updateProximityWarning();
+            renderer.render(scene, camera);
         }
 
         function onKeyDown(event) {
@@ -567,9 +1591,10 @@
                 case 'ArrowRight': case 'KeyD': moveRight = true; break;
                 case 'KeyF': useHealSkill(); break; 
                 case 'Space': useShieldSkill(); break; 
+                case 'KeyQ': useGrenadeSkill(); break;
+                case 'ShiftLeft': case 'ShiftRight': useDashSkill(); break;
             }
         }
-
         function onKeyUp(event) {
             switch (event.code) {
                 case 'ArrowUp': case 'KeyW': moveForward = false; break;
@@ -587,7 +1612,6 @@
                 lastHealUseTime = now;
             }
         }
-
         function useShieldSkill() {
             if (!isGameActive || health <= 0) return;
             const now = performance.now();
@@ -601,43 +1625,106 @@
                 }, SHIELD_DURATION);
             }
         }
+        function useGrenadeSkill() {
+            if (!isGameActive || health <= 0) return;
+            const now = performance.now();
+            if (now - lastGrenadeUseTime >= SKILL_GRENADE_CD) {
+                throwGrenade();
+                lastGrenadeUseTime = now;
+            }
+        }
+        function useDashSkill() {
+            if (!isGameActive || health <= 0) return;
+            const now = performance.now();
+            if (now - lastDashUseTime >= SKILL_DASH_CD) {
+                velocity.x = 0;
+                velocity.z = -300; 
+                dashOverlay.style.opacity = 0.8;
+                setTimeout(() => { dashOverlay.style.opacity = 0; }, 200);
+                lastDashUseTime = now;
+            }
+        }
+
+        function throwGrenade() {
+            const geometry = new THREE.SphereGeometry(0.3, 8, 8);
+            const material = new THREE.MeshBasicMaterial({ color: 0xff4400 });
+            const grenade = new THREE.Mesh(geometry, material);
+            
+            grenade.position.copy(camera.position);
+            grenade.position.y -= 0.2;
+
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            
+            const throwVelocity = direction.multiplyScalar(15);
+            throwVelocity.y += 5; 
+
+            grenades.push({
+                mesh: grenade,
+                velocity: throwVelocity
+            });
+            scene.add(grenade);
+        }
+
+        function explodeGrenade(position) {
+            for (let i = 0; i < 30; i++) {
+                const geo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+                const mat = new THREE.MeshBasicMaterial({ color: 0xff4400 });
+                const part = new THREE.Mesh(geo, mat);
+                part.position.copy(position);
+                particles.push({
+                    mesh: part,
+                    velocity: new THREE.Vector3((Math.random()-0.5)*2,(Math.random()-0.5)*2 + 1,(Math.random()-0.5)*2),
+                    life: 40
+                });
+                scene.add(part);
+            }
+
+            const explosionRadius = 10;
+            const explosionDamage = 10; 
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                const dist = position.distanceTo(e.group.position);
+                
+                if (dist <= explosionRadius) {
+                    e.currentHp -= explosionDamage;
+                    e.hpBarMesh.scale.x = Math.max(0, e.currentHp / e.maxHp);
+                    
+                    if (e.currentHp <= 0) {
+                        createExplosion(e.group.position, e.type.color, true);
+                        if (e.type.isHealer) healPlayer(20);
+                        scene.remove(e.group);
+                        enemies.splice(i, 1);
+                        score += e.type.score;
+                        killCount++;
+                        gainXp(e.type.xp);
+                    } else {
+                        const pushDir = new THREE.Vector3().subVectors(e.group.position, position).normalize();
+                        e.group.position.add(pushDir.multiplyScalar(3));
+                    }
+                }
+            }
+            updateUI();
+        }
 
         function healPlayer(amount) {
-            health += amount;
-            if (health > 100) health = 100;
+            health += amount; if (health > 100) health = 100;
             updateUI();
             effectOverlay.style.background = 'radial-gradient(circle, transparent 20%, rgba(0, 255, 0, 0.4) 100%)';
             effectOverlay.style.opacity = 0.8;
             setTimeout(() => { if (health > 0) effectOverlay.style.opacity = 0; }, 300);
         }
-
         function shoot() {
             const geometry = new THREE.SphereGeometry(0.1, 8, 8);
             const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
             const bullet = new THREE.Mesh(geometry, material);
-
-            bullet.position.copy(camera.position);
-            bullet.position.y -= 0.2; // 槍口位置
-
-            const direction = new THREE.Vector3();
-            camera.getWorldDirection(direction);
-            
-            // 加入一點隨機偏移 (隨著射速變快，後座力稍微增加一點點)
-            const spread = Math.max(0, 0.05 - (playerLevel * 0.001)); // 等級越高越準，但連發本身有擴散
-            direction.x += (Math.random() - 0.5) * spread;
-            direction.y += (Math.random() - 0.5) * spread;
-            direction.z += (Math.random() - 0.5) * spread;
-
-            bullets.push({
-                mesh: bullet,
-                velocity: direction.multiplyScalar(0.8), // 子彈速度
-                life: 100
-            });
-
-            scene.add(bullet);
-            
-            // 後座力視覺
-            camera.rotation.x += 0.005; 
+            bullet.position.copy(camera.position); bullet.position.y -= 0.2; 
+            const direction = new THREE.Vector3(); camera.getWorldDirection(direction);
+            const spread = Math.max(0, 0.05 - (playerLevel * 0.001)); 
+            direction.x += (Math.random() - 0.5) * spread; direction.y += (Math.random() - 0.5) * spread; direction.z += (Math.random() - 0.5) * spread;
+            bullets.push({ mesh: bullet, velocity: direction.multiplyScalar(0.8), life: 100 });
+            scene.add(bullet); camera.rotation.x += 0.005; 
         }
 
         function spawnEnemy() {
@@ -651,52 +1738,94 @@
             const group = new THREE.Group();
             const bodyGeo = new THREE.BoxGeometry(1, 1, 1);
             const bodyMat = new THREE.MeshPhongMaterial({ color: typeConfig.color, shininess: 100 });
-            const body = new THREE.Mesh(bodyGeo, bodyMat);
-            body.position.y = 0.5;
-            group.add(body);
+            const body = new THREE.Mesh(bodyGeo, bodyMat); body.position.y = 0.5; group.add(body);
 
             const headGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
             const headMat = new THREE.MeshPhongMaterial({ color: typeConfig.color, shininess: 100 });
             headMat.color.offsetHSL(0, 0, 0.1); 
-            const head = new THREE.Mesh(headGeo, headMat);
-            head.position.y = 1.3;
-            group.add(head);
+            const head = new THREE.Mesh(headGeo, headMat); head.position.y = 1.3; group.add(head);
 
             const hpBgGeo = new THREE.PlaneGeometry(1.2, 0.15);
             const hpBgMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
-            const hpBg = new THREE.Mesh(hpBgGeo, hpBgMat);
-            hpBg.position.y = 1.9;
-            group.add(hpBg);
+            const hpBg = new THREE.Mesh(hpBgGeo, hpBgMat); hpBg.position.y = 1.9; group.add(hpBg);
 
             const hpFgGeo = new THREE.PlaneGeometry(1.2, 0.15);
             const hpFgMat = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
-            const hpFg = new THREE.Mesh(hpFgGeo, hpFgMat);
-            hpFg.position.y = 1.9; hpFg.position.z = 0.01;
-            group.add(hpFg);
+            const hpFg = new THREE.Mesh(hpFgGeo, hpFgMat); hpFg.position.y = 1.9; hpFg.position.z = 0.01; group.add(hpFg);
 
             group.scale.set(typeConfig.scale, typeConfig.scale, typeConfig.scale);
 
+            // --- 難度控制生成邏輯 ---
             const angle = Math.random() * Math.PI * 2;
-            const radius = 25 + Math.random() * 25;
+            
+            let minSpawnDist = 25;
+            let maxSpawnDist = 50;
+
+            if (selectedDifficulty === 'easy') {
+                minSpawnDist = 45; 
+                maxSpawnDist = 65;
+            } else if (selectedDifficulty === 'hard') {
+                minSpawnDist = 15; 
+                maxSpawnDist = 40;
+            }
+
+            const radius = minSpawnDist + Math.random() * (maxSpawnDist - minSpawnDist);
+            let spawnX, spawnZ;
+
+            if (selectedDifficulty === 'hard') {
+                spawnX = Math.cos(angle) * radius + camera.position.x;
+                spawnZ = Math.sin(angle) * radius + camera.position.z;
+            } else {
+                const camDir = new THREE.Vector3();
+                camera.getWorldDirection(camDir);
+                const baseAngle = Math.atan2(camDir.x, camDir.z);
+                const offsetAngle = (Math.random() - 0.5) * Math.PI; 
+                const finalAngle = baseAngle + offsetAngle;
+                
+                spawnX = Math.sin(finalAngle) * radius + camera.position.x;
+                spawnZ = Math.cos(finalAngle) * radius + camera.position.z;
+            }
+
             const spawnRadius = (MAP_SIZE / 2) - 5; 
-            let spawnX = Math.cos(angle) * radius + camera.position.x;
-            let spawnZ = Math.sin(angle) * radius + camera.position.z;
             spawnX = Math.max(-spawnRadius, Math.min(spawnRadius, spawnX));
             spawnZ = Math.max(-spawnRadius, Math.min(spawnRadius, spawnZ));
-
             group.position.set(spawnX, 0, spawnZ);
 
-            // 隨著分數/等級增加敵人基礎血量，保持挑戰性
-            const hpScaling = 1 + (playerLevel * 0.1); 
+            let isBuffed = isNight;
+
+            let hpMultiplier = 1 + (playerLevel * 0.1); 
+            let speedMultiplier = 1.0;
+
+            if (selectedDifficulty === 'easy') {
+                hpMultiplier *= 0.7;
+                speedMultiplier *= 0.7;
+            }
+
+            if (isBuffed) { 
+                hpMultiplier *= 1.3; 
+                speedMultiplier *= 1.2; 
+            }
+
+            let finalSpeed = (typeConfig.speed + (score * 0.0001)) * speedMultiplier;
+
+            let speedCap = 0.35; 
+
+            if (selectedDifficulty === 'easy') {
+                speedCap = 0.15; 
+            } else if (selectedDifficulty === 'normal') {
+                speedCap = 0.22; 
+            }
+
+            finalSpeed = Math.min(finalSpeed, speedCap);
 
             enemies.push({
                 group: group,
                 headMesh: head,
                 hpBarMesh: hpFg,
                 type: typeConfig,
-                currentHp: typeConfig.maxHp * hpScaling,
-                maxHp: typeConfig.maxHp * hpScaling,
-                speed: typeConfig.speed + (score * 0.0001)
+                currentHp: typeConfig.maxHp * hpMultiplier,
+                maxHp: typeConfig.maxHp * hpMultiplier,
+                speed: finalSpeed
             });
 
             scene.add(group);
@@ -708,17 +1837,8 @@
             for (let i = 0; i < count; i++) {
                 const geo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
                 const mat = new THREE.MeshBasicMaterial({ color: pColor });
-                const part = new THREE.Mesh(geo, mat);
-                part.position.copy(position);
-                particles.push({
-                    mesh: part,
-                    velocity: new THREE.Vector3(
-                        (Math.random() - 0.5) * (isCrit? 1 : 0.5),
-                        (Math.random() - 0.5) * (isCrit? 1 : 0.5),
-                        (Math.random() - 0.5) * (isCrit? 1 : 0.5)
-                    ),
-                    life: 20
-                });
+                const part = new THREE.Mesh(geo, mat); part.position.copy(position);
+                particles.push({ mesh: part, velocity: new THREE.Vector3((Math.random()-0.5)*(isCrit?1:0.5),(Math.random()-0.5)*(isCrit?1:0.5),(Math.random()-0.5)*(isCrit?1:0.5)), life: 20 });
                 scene.add(part);
             }
         }
@@ -751,124 +1871,7 @@
                     const pulse = (Math.sin(performance.now() * 0.01) + 1) / 2 * 0.3;
                     effectOverlay.style.opacity = Math.min(1, intensity + pulse);
                 }
-            } else {
-                if (!effectOverlay.style.background.includes('rgba(0, 255, 0')) effectOverlay.style.opacity = 0;
-            }
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const now = performance.now();
-
-            // 技能 UI 更新
-            const timeSinceHeal = now - lastHealUseTime;
-            if (timeSinceHeal < SKILL_HEAL_CD) {
-                healOverlay.style.height = (100 - (timeSinceHeal / SKILL_HEAL_CD * 100)) + '%';
-                healTimer.style.display = 'block'; healTimer.innerText = Math.ceil((SKILL_HEAL_CD - timeSinceHeal) / 1000);
-            } else { healOverlay.style.height = '0%'; healTimer.style.display = 'none'; }
-
-            const timeSinceShield = now - lastShieldUseTime;
-            if (timeSinceShield < SKILL_SHIELD_CD) {
-                shieldUiOverlay.style.height = (100 - (timeSinceShield / SKILL_SHIELD_CD * 100)) + '%';
-                shieldTimer.style.display = 'block'; shieldTimer.innerText = Math.ceil((SKILL_SHIELD_CD - timeSinceShield) / 1000);
-            } else { shieldUiOverlay.style.height = '0%'; shieldTimer.style.display = 'none'; }
-
-            if (!isGameActive) return;
-
-            const delta = (now - prevTime) / 1000;
-
-            // --- 自動連發邏輯 ---
-            if (isMouseDown && now - lastShotTime > currentFireRate) {
-                shoot();
-                lastShotTime = now;
-            }
-
-            // 移動
-            const speed = 150.0; 
-            velocity.x -= velocity.x * 10.0 * delta; velocity.z -= velocity.z * 10.0 * delta;
-            direction.z = Number(moveForward) - Number(moveBackward); direction.x = Number(moveRight) - Number(moveLeft);
-            direction.normalize();
-            if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;
-            if (moveLeft || moveRight) velocity.x -= direction.x * speed * delta;
-            
-            const rotation = camera.rotation.y;
-            const dx = (velocity.z * delta * Math.sin(rotation) - velocity.x * delta * Math.cos(rotation));
-            const dz = (velocity.z * delta * Math.cos(rotation) + velocity.x * delta * Math.sin(rotation));
-            const nextX = camera.position.x + dx; const nextZ = camera.position.z + dz;
-
-            if (nextX > -BOUNDARY_LIMIT && nextX < BOUNDARY_LIMIT) camera.position.x = nextX; else { velocity.x = 0; camera.position.x = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, nextX)); }
-            if (nextZ > -BOUNDARY_LIMIT && nextZ < BOUNDARY_LIMIT) camera.position.z = nextZ; else { velocity.z = 0; camera.position.z = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, nextZ)); }
-            camera.position.y = 1.6;
-
-            // 子彈
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                const b = bullets[i]; b.mesh.position.add(b.velocity); b.life--;
-                if (b.life <= 0) { scene.remove(b.mesh); bullets.splice(i, 1); }
-            }
-
-            // 敵人
-            if (now - lastEnemySpawnTime > enemySpawnRate) {
-                spawnEnemy(); lastEnemySpawnTime = now;
-                if (enemySpawnRate > 500) enemySpawnRate -= 20; 
-            }
-
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                const e = enemies[i];
-                const lookDir = new THREE.Vector3().subVectors(camera.position, e.group.position); lookDir.y = 0; lookDir.normalize();
-                e.group.position.add(lookDir.multiplyScalar(e.speed));
-                e.group.lookAt(camera.position.x, e.group.position.y, camera.position.z);
-
-                const distToPlayer = Math.hypot(e.group.position.x - camera.position.x, e.group.position.z - camera.position.z);
-                if (distToPlayer < 1.5) {
-                    takeDamage(20); createExplosion(e.group.position, e.type.color, false);
-                    scene.remove(e.group); enemies.splice(i, 1); continue;
-                }
-
-                for (let j = bullets.length - 1; j >= 0; j--) {
-                    const b = bullets[j];
-                    const distXZ = Math.hypot(b.mesh.position.x - e.group.position.x, b.mesh.position.z - e.group.position.z);
-                    const bulletY = b.mesh.position.y;
-                    const enemyBottomY = e.group.position.y;
-                    const enemyTopY = enemyBottomY + (2.0 * e.type.scale);
-
-                    if (distXZ < e.type.scale + 0.5 && bulletY > enemyBottomY && bulletY < enemyTopY) { 
-                        const relY = b.mesh.position.y - e.group.position.y;
-                        const isHeadshot = relY > (1.1 * e.type.scale);
-                        
-                        // 計算最終傷害 (基礎傷害 * 等級加成 * 爆頭倍率)
-                        const damage = currentDamage * (isHeadshot ? 2 : 1);
-
-                        createExplosion(b.mesh.position, isHeadshot ? 0xffff00 : 0xffffaa, isHeadshot); 
-                        scene.remove(b.mesh); bullets.splice(j, 1);
-                        
-                        e.currentHp -= damage;
-                        e.hpBarMesh.scale.x = Math.max(0, e.currentHp / e.maxHp);
-
-                        if (e.currentHp <= 0) {
-                            createExplosion(e.group.position, e.type.color, isHeadshot); 
-                            if (e.type.isHealer) healPlayer(20);
-                            scene.remove(e.group); enemies.splice(i, 1);
-                            
-                            score += e.type.score * (isHeadshot ? 2 : 1);
-                            gainXp(e.type.xp); // 獲得經驗值
-                            
-                            updateUI();
-                        } else {
-                            e.group.position.add(lookDir.multiplyScalar(-2));
-                        }
-                        break;
-                    }
-                }
-            }
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i]; p.mesh.position.add(p.velocity); p.life--; p.mesh.scale.multiplyScalar(0.9);
-                if (p.life <= 0) { scene.remove(p.mesh); particles.splice(i, 1); }
-            }
-
-            updateProximityWarning();
-            prevTime = now;
-            renderer.render(scene, camera);
+            } else { if (!effectOverlay.style.background.includes('rgba(0, 255, 0')) effectOverlay.style.opacity = 0; }
         }
 
         function takeDamage(amount) {
@@ -889,30 +1892,39 @@
             else if (health > 20) healthBarEl.style.backgroundColor = '#ffaa00';
             else healthBarEl.style.backgroundColor = '#ff0000';
 
-            // 更新經驗條
             const xpPercent = (currentXp / xpToNextLevel) * 100;
             xpBarEl.style.width = xpPercent + '%';
             xpTextEl.innerText = `XP ${currentXp} / ${xpToNextLevel}`;
             
-            // 更新等級與稱號
             levelBadgeEl.innerText = 'LV.' + playerLevel;
-            
-            // 尋找符合等級的稱號
             let currentTitle = "列兵";
-            for (let i = RankTitles.length - 1; i >= 0; i--) {
-                if (playerLevel >= RankTitles[i].level) {
-                    currentTitle = RankTitles[i].title;
-                    break;
-                }
-            }
+            for (let i = RankTitles.length - 1; i >= 0; i--) { if (playerLevel >= RankTitles[i].level) { currentTitle = RankTitles[i].title; break; } }
             rankEl.innerText = currentTitle;
+
+            // 修復：根據模式正確切換回合數顯示
+            if (selectedGameMode === 'endless') {
+                modeDisplayEl.innerText = "模式: 無限制";
+                roundDisplayEl.style.display = 'none'; // 隱藏回合數
+            } else {
+                modeDisplayEl.innerText = "模式: 回合制";
+                roundDisplayEl.style.display = 'block'; // 顯示回合數
+                roundDisplayEl.innerText = `ROUND ${roundNumber}`;
+            }
         }
 
         function gameOver() {
             isGameActive = false; isMouseDown = false;
             document.exitPointerLock();
-            menuScreen.style.display = 'flex';
-            startBtn.innerText = `重新開始 (最終等級: LV.${playerLevel})`;
+            
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-level').innerText = 'LV.' + playerLevel;
+            document.getElementById('final-kills').innerText = killCount;
+            document.getElementById('final-rank').innerText = rankEl.innerText;
+
+            gameOverScreen.style.display = 'flex';
+            
+            // Trigger AI Report
+            generateBattleReport(score, playerLevel, killCount, rankEl.innerText);
         }
 
         function onWindowResize() {
