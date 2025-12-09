@@ -21,23 +21,14 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 20px;
-            box-sizing: border-box;
+            /* 移除原本的 flex 布局，改用絕對定位控制各個區塊 */
         }
 
-        /* 頂部 HUD 區域 */
-        .hud-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            width: 100%;
-        }
-
-        /* 左側資訊 */
-        .hud-left {
+        /* --- 左上角：分數與資訊 --- */
+        .hud-left-top {
+            position: absolute;
+            top: 20px;
+            left: 20px;
             display: flex;
             flex-direction: column;
             gap: 5px;
@@ -51,14 +42,13 @@
             text-shadow: 0 0 5px #00ffcc;
         }
 
-        /* 新增回合數顯示樣式 */
         #round-display {
             color: #ffaa00;
             font-size: 36px;
             font-weight: 900;
             text-shadow: 0 0 10px #ff4400;
             margin-top: 5px;
-            display: none; /* 預設隱藏，回合制才顯示 */
+            display: none; 
         }
 
         .rank-text {
@@ -80,19 +70,19 @@
             font-size: 24px;
         }
 
-        /* 中間：時間條 */
-        .hud-center {
+        /* --- 頂部中央：時間條 --- */
+        .hud-center-top {
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
+            top: 10px; /* 更靠近頂部 */
             display: flex;
             flex-direction: column;
             align-items: center;
-            top: 20px;
         }
 
         .time-bar-container {
-            width: 400px;
+            width: 500px; /* 加寬 */
             height: 15px;
             background: rgba(0, 0, 0, 0.6);
             border: 1px solid #aaa;
@@ -116,12 +106,39 @@
             text-shadow: 0 0 5px black;
         }
 
-        /* 右側狀態 */
-        .status-area {
+        /* --- 右上角：小地圖 --- */
+        #minimap-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 200px;
+            height: 200px;
+            background: rgba(0, 20, 10, 0.7);
+            border: 2px solid #00ffcc;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+        
+        #minimap-label {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            color: #00ffcc;
+            font-size: 12px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        /* --- 左下角：血量與經驗值 --- */
+        .hud-left-bottom {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
             gap: 10px;
+            align-items: flex-start;
         }
 
         .bar-container {
@@ -167,10 +184,16 @@
             transition: width 0.2s;
         }
 
+        /* --- 右下角：技能欄 --- */
+        .hud-right-bottom {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+        }
+
         .skills-wrapper {
             display: flex;
             gap: 15px;
-            margin-top: 5px;
         }
 
         .skill-container {
@@ -210,30 +233,46 @@
             display: none;
         }
 
-        /* 小地圖樣式 */
-        #minimap-container {
+        /* --- 護盾持續時間條 --- */
+        #shield-active-container {
             position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 200px;
-            height: 200px;
-            background: rgba(0, 20, 10, 0.7);
-            border: 2px solid #00ffcc;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 0 10px #00ffcc;
-        }
-        
-        #minimap-label {
-            position: absolute;
-            top: 5px;
-            left: 5px;
-            color: #00ffcc;
-            font-size: 12px;
-            font-weight: bold;
-            pointer-events: none;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.2s;
         }
 
+        #shield-active-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00ccff;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        #shield-active-bar {
+            width: 100%;
+            height: 100%;
+            background: #00ccff;
+            box-shadow: 0 0 10px #00ccff;
+        }
+
+        #shield-active-text {
+            color: #00ccff;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 5px #00ccff;
+            letter-spacing: 2px;
+        }
+
+        /* 其余通用樣式 */
         #round-announcement {
             position: absolute;
             top: 40%;
@@ -321,7 +360,15 @@
             background: #0b0c10;
             box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
             position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
         }
+
+        /* 自訂捲動條樣式 */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 20, 20, 0.8); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb { background: #00ffcc; border-radius: 5px; border: 2px solid #004444; }
+        ::-webkit-scrollbar-thumb:hover { background: #00ccaa; }
 
         .intro-title { 
             font-size: 48px; margin: 0 0 10px 0; 
@@ -339,6 +386,7 @@
             font-size: 20px;
             font-style: italic;
             text-shadow: 0 0 5px rgba(255, 170, 0, 0.5);
+            white-space: pre-wrap;
         }
 
         .intro-grid {
@@ -409,7 +457,7 @@
             border-bottom: 1px solid #ffaa00; padding-bottom: 10px; margin-bottom: 20px;
         }
 
-        .start-btn-container { display: flex; justify-content: center; width: 100%; margin-top: 20px; gap: 20px; }
+        .start-btn-container { display: flex; justify-content: center; width: 100%; margin-top: 20px; gap: 20px; flex-wrap: wrap; }
 
         .main-btn { 
             padding: 15px 60px; font-size: 28px; background: transparent; color: #00ffcc; 
@@ -489,6 +537,20 @@
         .result-title { font-size: 64px; color: #ffaa00; text-shadow: 0 0 20px #ffaa00; margin: 30px 0; font-weight: 900; }
         .result-stat { font-size: 32px; margin: 15px 0; color: #ddd; display: flex; justify-content: space-between; width: 60%; border-bottom: 1px solid #333; }
         .result-value { font-weight: bold; color: #ffaa00; }
+        
+        /* AI Medal (New) */
+        .ai-medal {
+            font-size: 36px;
+            color: #00ffcc;
+            font-weight: 900;
+            text-shadow: 0 0 15px #00ffcc;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #00ffcc;
+            padding: 10px 30px;
+            border-radius: 50px;
+            background: rgba(0, 255, 204, 0.1);
+        }
 
         /* AI Report Style */
         #ai-report-box {
@@ -526,10 +588,10 @@
 <body>
 
     <div id="ui-layer">
+        <!-- 頂部 HUD (左上資訊 + 中央時間 + 右上小地圖) -->
         <div class="hud-top">
-            <div class="hud-left">
+            <div class="hud-left-top">
                 <div class="hud-text">得分: <span id="score">0</span></div>
-                <!-- 新增回合數顯示 -->
                 <div id="round-display">ROUND 1</div>
                 <div class="rank-text">
                     <span id="level-badge" class="level-badge">LV.1</span>
@@ -538,14 +600,33 @@
                 <div style="font-size: 20px; color: #aaa; margin-top: 5px;" id="mode-display">模式: 無限制</div>
             </div>
             
-            <div class="hud-center">
+            <div class="hud-center-top">
                 <div id="time-text">時間: 白天</div>
                 <div class="time-bar-container">
                     <div id="time-bar"></div>
                 </div>
             </div>
 
-            <div class="status-area">
+            <!-- 小地圖移至右上 -->
+            <div id="minimap-container">
+                <div id="minimap-label">RADAR</div>
+                <canvas id="minimap" width="200" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- 護盾倒數條 (新增) -->
+        <div id="shield-active-container">
+            <div id="shield-active-text">SHIELD ACTIVE</div>
+            <div id="shield-active-bar-bg">
+                <div id="shield-active-bar"></div>
+            </div>
+        </div>
+
+        <!-- 底部 HUD (左下血量/經驗 + 右下技能) -->
+        <div class="hud-bottom-container" style="position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box;">
+            
+            <!-- 左下角：血量與經驗值 -->
+            <div class="hud-left-bottom">
                 <div class="bar-container health-container">
                     <div id="health-text" class="bar-text">HP 100%</div>
                     <div id="health-bar"></div>
@@ -555,7 +636,10 @@
                     <div id="xp-text" class="bar-text">XP 0 / 100</div>
                     <div id="xp-bar"></div>
                 </div>
+            </div>
 
+            <!-- 右下角：技能欄 -->
+            <div class="hud-right-bottom">
                 <div class="skills-wrapper">
                     <!-- 補血 -->
                     <div class="skill-container">
@@ -578,7 +662,7 @@
                         <div id="skill-grenade-overlay" class="cooldown-overlay"></div>
                         <div id="skill-grenade-timer" class="skill-timer">10</div>
                     </div>
-                    <!-- 衝刺 (新) -->
+                    <!-- 衝刺 -->
                     <div class="skill-container" style="border-color: #ffff00;">
                         <div class="skill-icon" style="color: #ffff00;">⚡</div>
                         <div class="skill-key">Shift</div>
@@ -587,12 +671,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- 小地圖 -->
-        <div id="minimap-container">
-            <div id="minimap-label">RADAR</div>
-            <canvas id="minimap" width="200" height="200"></canvas>
         </div>
     </div>
 
@@ -613,7 +691,7 @@
         <div id="page-intro" class="screen-page active">
             <div class="intro-box">
                 <div class="intro-title" id="intro-title-text">幾何射擊 3D : 戰術進化</div>
-                <div id="mission-briefing"></div>
+                <div id="mission-briefing">請點擊下方按鈕以獲取您的任務簡報...</div>
                 
                 <div class="intro-grid">
                     <!-- 左側 -->
@@ -881,6 +959,10 @@
         const SKILL_DASH_CD = 5000; // 5秒冷卻
         let lastDashUseTime = -SKILL_DASH_CD;
 
+        // 物理與障礙物
+        const obstacles = []; // 儲存牆壁與障礙
+        const grounds = [];   // 儲存地面與斜坡 (用於 Raycast 高度)
+
         // 物件
         const bullets = [];
         const grenades = []; 
@@ -932,6 +1014,10 @@
         const missionBriefingEl = document.getElementById('mission-briefing');
         const introTitleEl = document.getElementById('intro-title-text');
 
+        // 護盾倒數條 DOM
+        const shieldActiveContainer = document.getElementById('shield-active-container');
+        const shieldActiveBar = document.getElementById('shield-active-bar');
+
         // 小地圖 Context
         const minimapCanvas = document.getElementById('minimap');
         const minimapCtx = minimapCanvas.getContext('2d');
@@ -979,9 +1065,10 @@
         async function generateMissionBriefing() {
             missionBriefingEl.innerText = "正在連線加密頻道...";
             const prompt = `
-            Task: Generate a cool, short sci-fi mission title and a 1-sentence briefing in Traditional Chinese (Taiwan) for a shooter game.
+            Context: A sci-fi shooter game.
+            Params: Mode=${selectedGameMode}, Time=${selectedTimeMode}, Diff=${selectedDifficulty}.
+            Task: Generate a cool mission title and a 1-sentence briefing in Traditional Chinese.
             Format: "Title|Briefing"
-            Example: "行動代號：紅蓮|敵軍機甲部隊集結，務必全數殲滅。"
             `;
             
             const result = await callGeminiAPI(prompt);
@@ -1003,23 +1090,32 @@
             aiReportContent.innerText = "正在接收總部戰術評估...";
             
             const prompt = `
-            Context: A sci-fi 3D shooter game battle just ended. The player died.
-            Player Stats:
-            - Rank: ${rank}
-            - Level: ${level}
-            - Score: ${score}
-            - Kills: ${killCount}
-            - Difficulty: ${selectedDifficulty}
-            
-            Task: Act as a strict but fair military AI commander. Write a short battle report (max 2 sentences) in Traditional Chinese (Taiwan).
-            - If score < 500, be harsh.
-            - If score > 2000, praise.
-            - Mention difficulty if relevant.
+            Context: Player died in a sci-fi shooter.
+            Stats: Rank ${rank}, Lv${level}, Score ${score}, Kills ${kills}.
+            Mode: ${selectedGameMode}, ${selectedTimeMode}, ${selectedDifficulty}.
+            Task: Act as a military AI.
+            1. Award a unique, creative Medal name based on performance (e.g. "Peacekeeper", "Ammo Waster").
+            2. Write a short evaluation (max 2 sentences).
+            Format: "Medal Name|Evaluation"
+            Language: Traditional Chinese (Taiwan).
             `;
 
-            const report = await callGeminiAPI(prompt);
+            const result = await callGeminiAPI(prompt);
             aiReportContent.classList.remove('ai-loading');
-            aiReportContent.innerText = report;
+            
+            try {
+                if (result.includes("|")) {
+                    const parts = result.split("|");
+                    aiReportContent.innerHTML = `
+                        <div class="ai-medal">🏅 ${parts[0]}</div>
+                        <div class="ai-content">${parts[1]}</div>
+                    `;
+                } else {
+                    aiReportContent.innerText = result;
+                }
+            } catch(e) {
+                aiReportContent.innerText = result;
+            }
         }
 
         async function askAiForTactics() {
@@ -1027,15 +1123,9 @@
             aiTacticsContent.innerText = "正在分析戰場數據...";
             
             const prompt = `
-            Context: The player paused a sci-fi shooter game to ask for advice.
-            Current Status:
-            - Health: ${health}%
-            - Level: ${playerLevel}
-            - Enemies nearby: ${enemies.length}
-            - Is Night: ${isNight}
-            - Difficulty: ${selectedDifficulty}
-            
-            Task: Give 1 short, tactical advice in Traditional Chinese (max 15 words).
+            Context: Player paused game.
+            Status: HP ${health}%, Lv ${playerLevel}, Enemies ${enemies.length}, Night ${isNight}.
+            Task: Give 1 short, tactical advice (max 10 words) in Traditional Chinese. Like a radio command.
             `;
 
             const advice = await callGeminiAPI(prompt);
@@ -1128,16 +1218,8 @@
             pointLight.position.set(0, 10, 0);
             scene.add(pointLight);
 
-            // 實心草地地板
-            const floorGeometry = new THREE.BoxGeometry(MAP_SIZE, 5, MAP_SIZE);
-            const floorMaterial = new THREE.MeshLambertMaterial({ 
-                color: 0x1a472a 
-            });
-            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-            floor.position.y = -2.5; 
-            scene.add(floor);
-
-            createBoundaries();
+            // 呼叫地圖生成函數 (地板 + 障礙物)
+            createLevel();
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setPixelRatio(window.devicePixelRatio);
@@ -1218,14 +1300,18 @@
             });
         }
 
-        function createBoundaries() {
-            const wallMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0x00ffcc, 
-                transparent: true, 
-                opacity: 0.3, 
-                side: THREE.DoubleSide,
-                shininess: 30
-            });
+        // --- 地圖生成系統 ---
+        function createLevel() {
+            // 1. 實心草地地板
+            const floorGeometry = new THREE.BoxGeometry(MAP_SIZE, 5, MAP_SIZE);
+            const floorMaterial = new THREE.MeshLambertMaterial({ color: 0x1a472a }); // 深墨綠色
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.position.y = -2.5; 
+            scene.add(floor);
+            grounds.push(floor); // 加入地面列表
+
+            // 2. 邊界牆
+            const wallMaterial = new THREE.MeshPhongMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.3, side: THREE.DoubleSide, shininess: 30 });
             const wallHeight = 20;
             const wallGeo = new THREE.PlaneGeometry(MAP_SIZE, wallHeight);
             
@@ -1233,6 +1319,122 @@
             const wallS = new THREE.Mesh(wallGeo, wallMaterial); wallS.position.set(0, wallHeight/2, MAP_SIZE/2); scene.add(wallS);
             const wallE = new THREE.Mesh(wallGeo, wallMaterial); wallE.rotation.y = -Math.PI / 2; wallE.position.set(MAP_SIZE/2, wallHeight/2, 0); scene.add(wallE);
             const wallW = new THREE.Mesh(wallGeo, wallMaterial); wallW.rotation.y = Math.PI / 2; wallW.position.set(-MAP_SIZE/2, wallHeight/2, 0); scene.add(wallW);
+            
+            // 3. 障礙物 (只保留牆壁)
+            const stoneMat = new THREE.MeshLambertMaterial({ color: 0x555555 }); // 石頭
+            
+            // --- A. 掩體牆 (Walls) ---
+            const wallConfigs = [
+                { x: 30, z: 30, w: 10, h: 4, d: 2, rot: 0 },
+                { x: -30, z: -30, w: 10, h: 4, d: 2, rot: 0 },
+                { x: 30, z: -30, w: 10, h: 4, d: 2, rot: Math.PI/2 },
+                { x: -30, z: 30, w: 10, h: 4, d: 2, rot: Math.PI/2 },
+                { x: 50, z: 0, w: 4, h: 6, d: 4, rot: 0 }, // 柱子
+                { x: -50, z: 0, w: 4, h: 6, d: 4, rot: 0 },
+                // 額外增加一些隨機掩體填補原本斜坡的空缺
+                { x: 0, z: 40, w: 15, h: 4, d: 2, rot: 0 },
+                { x: 0, z: -40, w: 15, h: 4, d: 2, rot: 0 },
+                { x: 40, z: 0, w: 2, h: 4, d: 15, rot: 0 },
+                { x: -40, z: 0, w: 2, h: 4, d: 15, rot: 0 }
+            ];
+
+            wallConfigs.forEach(cfg => {
+                const boxGeo = new THREE.BoxGeometry(cfg.w, cfg.h, cfg.d);
+                const wall = new THREE.Mesh(boxGeo, stoneMat);
+                wall.position.set(cfg.x, cfg.h/2, cfg.z);
+                wall.rotation.y = cfg.rot;
+                scene.add(wall);
+                
+                const box3 = new THREE.Box3().setFromObject(wall);
+                obstacles.push({ mesh: wall, box: box3, type: 'wall' });
+                
+                grounds.push(wall); 
+            });
+
+            // (已移除斜坡與高台的生成代碼)
+        }
+
+        // --- 物理系統 (Raycast Height + AABB Collision) ---
+        const playerRaycaster = new THREE.Raycaster();
+        const downVector = new THREE.Vector3(0, -1, 0);
+        
+        // 用於碰撞檢測的臨時 Raycaster (避免頻繁 new)
+        const collisionRaycaster = new THREE.Raycaster();
+
+        // 通用碰撞檢測函數 (玩家與敵人共用)
+        function checkCollision(x, z, feetY, radius) {
+            for (let obs of obstacles) {
+                // 水平 AABB 碰撞檢查
+                if (x + radius > obs.box.min.x && x - radius < obs.box.max.x &&
+                    z + radius > obs.box.min.z && z - radius < obs.box.max.z) {
+                    
+                    // --- [修正] 智慧攀爬判定 ---
+                    // 檢查這個障礙物是否也是 "地板" (例如高台)
+                    if (grounds.includes(obs.mesh)) {
+                        // 從高空向下發射射線，偵測該座標的 "實際表面高度"
+                        collisionRaycaster.set(new THREE.Vector3(x, 50, z), downVector);
+                        const hits = collisionRaycaster.intersectObject(obs.mesh);
+                        
+                        if (hits.length > 0) {
+                            const surfaceHeight = hits[0].point.y;
+                            
+                            // 判定：如果地形高度只比腳底高一點點 (可攀爬範圍)，則視為可通行
+                            // 寬容度設為 2.5，確保能從斜坡順暢走上平台
+                            if (surfaceHeight <= feetY + 2.5) {
+                                continue; // 忽略此碰撞，允許移動
+                            }
+                        }
+                    }
+
+                    // 標準高度阻擋檢查 (針對純牆壁)
+                    // 如果腳底明顯低於障礙物頂部，視為撞牆
+                    if (feetY < obs.box.max.y - 0.5) {
+                        return false; // 發生碰撞，禁止移動
+                    }
+                }
+            }
+            return true; // 無碰撞
+        }
+
+        // 舊的 checkPlayerPhysics 改寫為調用通用函數
+        function checkPlayerPhysics(newX, newZ) {
+            const playerFootY = camera.position.y - 1.6;
+            return checkCollision(newX, newZ, playerFootY, 0.5);
+        }
+
+        function updatePlayerHeight() {
+            // [修正] 抬高射線起點
+            const rayOrigin = camera.position.clone();
+            rayOrigin.y = 50; 
+            
+            playerRaycaster.set(rayOrigin, downVector);
+            const intersects = playerRaycaster.intersectObjects(grounds);
+
+            if (intersects.length > 0) {
+                const hit = intersects[0];
+                const groundHeight = hit.point.y;
+                const targetY = groundHeight + 1.6;
+                const currentY = camera.position.y;
+                const diff = targetY - currentY;
+
+                // 爬坡/下坡邏輯
+                if (diff > -2.0 && diff < 6.0) { 
+                    camera.position.y = targetY;
+                    velocity.y = 0; 
+                } else if (diff <= -2.0) {
+                    // 掉落 (高低差太大)
+                    camera.position.y -= 20 * 0.016; 
+                    if (camera.position.y < targetY) {
+                        camera.position.y = targetY;
+                        velocity.y = 0;
+                    }
+                }
+            } else {
+                 // 虛空掉落
+                 camera.position.y -= 20 * 0.016;
+                 if (camera.position.y < -10) health = 0; 
+            }
+            if (camera.position.y < 1.6 && health > 0) camera.position.y = 1.6;
         }
 
         function resetGame() {
@@ -1394,6 +1596,17 @@
             const canvasSize = 200;
             const scale = canvasSize / mapSize;
             
+            // 繪製障礙物 (灰色)
+            obstacles.forEach(obs => {
+                const w = (obs.box.max.x - obs.box.min.x) * scale;
+                const h = (obs.box.max.z - obs.box.min.z) * scale;
+                const x = (obs.box.min.x + mapSize/2) * scale;
+                const y = (obs.box.min.z + mapSize/2) * scale;
+                
+                minimapCtx.fillStyle = 'rgba(100, 100, 100, 0.5)';
+                minimapCtx.fillRect(x, y, w, h);
+            });
+
             // 繪製敵人
             enemies.forEach(e => {
                 const x = (e.group.position.x + mapSize/2) * scale;
@@ -1443,6 +1656,25 @@
             shieldTimer.style.display = timeSinceShield < SKILL_SHIELD_CD ? 'block' : 'none';
             if(shieldTimer.style.display === 'block') shieldTimer.innerText = Math.ceil((SKILL_SHIELD_CD - timeSinceShield) / 1000);
 
+            // 更新護盾持續條
+            if (isShieldActive) {
+                const shieldRemaining = SHIELD_DURATION - (now - lastShieldUseTime);
+                if (shieldRemaining > 0) {
+                    shieldActiveContainer.style.display = 'flex';
+                    shieldActiveContainer.style.opacity = 1;
+                    const percent = (shieldRemaining / SHIELD_DURATION) * 100;
+                    shieldActiveBar.style.width = percent + '%';
+                } else {
+                     // 結束時淡出
+                     shieldActiveContainer.style.opacity = 0;
+                     setTimeout(() => { 
+                         if(!isShieldActive) shieldActiveContainer.style.display = 'none'; 
+                     }, 200);
+                }
+            } else {
+                shieldActiveContainer.style.display = 'none';
+            }
+
             const timeSinceGrenade = now - lastGrenadeUseTime;
             grenadeOverlay.style.height = timeSinceGrenade < SKILL_GRENADE_CD ? (100 - (timeSinceGrenade / SKILL_GRENADE_CD * 100)) + '%' : '0%';
             grenadeTimer.style.display = timeSinceGrenade < SKILL_GRENADE_CD ? 'block' : 'none';
@@ -1473,16 +1705,62 @@
             const rotation = camera.rotation.y;
             const dx = (velocity.z * delta * Math.sin(rotation) - velocity.x * delta * Math.cos(rotation));
             const dz = (velocity.z * delta * Math.cos(rotation) + velocity.x * delta * Math.sin(rotation));
-            const nextX = camera.position.x + dx; const nextZ = camera.position.z + dz;
+            
+            // --- 物理移動與碰撞檢查 ---
+            const nextX = camera.position.x + dx;
+            const nextZ = camera.position.z + dz;
 
-            if (nextX > -BOUNDARY_LIMIT && nextX < BOUNDARY_LIMIT) camera.position.x = nextX; else { velocity.x = 0; camera.position.x = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, nextX)); }
-            if (nextZ > -BOUNDARY_LIMIT && nextZ < BOUNDARY_LIMIT) camera.position.z = nextZ; else { velocity.z = 0; camera.position.z = Math.max(-BOUNDARY_LIMIT, Math.min(BOUNDARY_LIMIT, nextZ)); }
-            camera.position.y = 1.6;
+            // 檢查水平碰撞
+            let canMoveX = true;
+            let canMoveZ = true;
+
+            // 邊界檢查
+            if (nextX <= -BOUNDARY_LIMIT || nextX >= BOUNDARY_LIMIT) canMoveX = false;
+            if (nextZ <= -BOUNDARY_LIMIT || nextZ >= BOUNDARY_LIMIT) canMoveZ = false;
+
+            // 障礙物檢查 (分軸檢查以允許滑行)
+            if (!checkPlayerPhysics(nextX, camera.position.z)) canMoveX = false;
+            if (!checkPlayerPhysics(camera.position.x, nextZ)) canMoveZ = false;
+
+            if (canMoveX) camera.position.x = nextX;
+            if (canMoveZ) camera.position.z = nextZ;
+
+            // 高度檢查 (Raycast)
+            updatePlayerHeight();
 
             // 子彈物理
             for (let i = bullets.length - 1; i >= 0; i--) {
                 const b = bullets[i]; b.mesh.position.add(b.velocity); b.life--;
-                if (b.life <= 0) { scene.remove(b.mesh); bullets.splice(i, 1); }
+                
+                // 檢查是否撞到牆壁
+                let hitWall = false;
+                for(let obs of obstacles) {
+                     if(obs.box.containsPoint(b.mesh.position)) {
+                         hitWall = true; break;
+                     }
+                }
+                
+                // 檢查是否撞到地面 (grounds) - 修正斜坡穿透問題
+                let hitGround = false;
+                if (!hitWall) { // 如果已經撞牆就不需要檢查地板了
+                    const bulletRay = new THREE.Raycaster(
+                        new THREE.Vector3(b.mesh.position.x, b.mesh.position.y + 1, b.mesh.position.z), // 從子彈上方一點發射射線
+                        new THREE.Vector3(0, -1, 0)
+                    );
+                    const groundHits = bulletRay.intersectObjects(grounds);
+                    if (groundHits.length > 0) {
+                        const groundHeight = groundHits[0].point.y;
+                        if (b.mesh.position.y <= groundHeight) {
+                            hitGround = true;
+                        }
+                    }
+                }
+
+                if (b.life <= 0 || hitWall || hitGround || b.mesh.position.y < -1) { 
+                    if(hitWall || hitGround) createExplosion(b.mesh.position, 0xaaaaaa, false); // 撞擊火花
+                    scene.remove(b.mesh); 
+                    bullets.splice(i, 1); 
+                }
             }
 
             // 手榴彈物理
@@ -1491,6 +1769,7 @@
                 g.velocity.y -= 20.0 * delta; 
                 g.mesh.position.add(g.velocity.clone().multiplyScalar(delta)); 
                 
+                // 撞地檢測
                 if (g.mesh.position.y <= 0.2) {
                     explodeGrenade(g.mesh.position);
                     scene.remove(g.mesh);
@@ -1529,9 +1808,67 @@
             // 敵人行為
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const e = enemies[i];
-                const lookDir = new THREE.Vector3().subVectors(camera.position, e.group.position); lookDir.y = 0; lookDir.normalize();
-                e.group.position.add(lookDir.multiplyScalar(e.speed));
+                
+                // 群體分離 (Separation)
+                const separation = new THREE.Vector3();
+                let count = 0;
+                for (let j = 0; j < enemies.length; j++) {
+                    if (i === j) continue;
+                    const other = enemies[j];
+                    const dist = e.group.position.distanceTo(other.group.position);
+                    if (dist < 2.0) { // 擠在一起的半徑
+                        const push = new THREE.Vector3().subVectors(e.group.position, other.group.position);
+                        push.normalize();
+                        push.divideScalar(dist); // 距離越近推力越大
+                        separation.add(push);
+                        count++;
+                    }
+                }
+                if (count > 0) {
+                    separation.divideScalar(count);
+                    separation.multiplyScalar(0.5); // 分離力度
+                }
+                
+                // 追蹤玩家向量
+                const lookDir = new THREE.Vector3().subVectors(camera.position, e.group.position); 
+                lookDir.y = 0; 
+                lookDir.normalize();
+
+                // 結合追蹤與分離
+                const finalMoveDir = lookDir.clone().add(separation).normalize();
+
+                // --- 敵人移動與防穿牆 (滑牆) 邏輯 ---
+                const moveX = finalMoveDir.x * e.speed;
+                const moveZ = finalMoveDir.z * e.speed;
+                
+                // X 軸移動嘗試
+                const nextX = e.group.position.x + moveX;
+                const currZ = e.group.position.z;
+                if (checkCollision(nextX, currZ, e.group.position.y, 0.5)) {
+                    e.group.position.x = nextX;
+                }
+
+                // Z 軸移動嘗試
+                const currX = e.group.position.x;
+                const nextZ = e.group.position.z + moveZ;
+                if (checkCollision(currX, nextZ, e.group.position.y, 0.5)) {
+                    e.group.position.z = nextZ;
+                }
+                
+                // 困住檢測：如果長時間沒動，給一個隨機推力 (簡單防卡死)
+                if (Math.abs(moveX) < 0.01 && Math.abs(moveZ) < 0.01) {
+                     e.group.position.x += (Math.random() - 0.5) * 0.1;
+                     e.group.position.z += (Math.random() - 0.5) * 0.1;
+                }
+
                 e.group.lookAt(camera.position.x, e.group.position.y, camera.position.z);
+
+                // 敵人高度調整 (爬坡)
+                const enemyRay = new THREE.Raycaster(new THREE.Vector3(e.group.position.x, 10, e.group.position.z), downVector);
+                const hits = enemyRay.intersectObjects(grounds);
+                if(hits.length > 0) {
+                    e.group.position.y = hits[0].point.y; 
+                }
 
                 const distToPlayer = Math.hypot(e.group.position.x - camera.position.x, e.group.position.z - camera.position.z);
                 if (distToPlayer < 1.5) {
@@ -1789,7 +2126,16 @@
             const spawnRadius = (MAP_SIZE / 2) - 5; 
             spawnX = Math.max(-spawnRadius, Math.min(spawnRadius, spawnX));
             spawnZ = Math.max(-spawnRadius, Math.min(spawnRadius, spawnZ));
-            group.position.set(spawnX, 0, spawnZ);
+            
+            // 修正初始高度 (避免生成在地板下)
+            const rayStart = new THREE.Vector3(spawnX, 20, spawnZ);
+            const raycaster = new THREE.Raycaster(rayStart, new THREE.Vector3(0, -1, 0));
+            const hits = raycaster.intersectObjects(grounds);
+            let spawnY = 0;
+            if (hits.length > 0) {
+                spawnY = hits[0].point.y;
+            }
+            group.position.set(spawnX, spawnY, spawnZ);
 
             let isBuffed = isNight;
 
@@ -1808,12 +2154,12 @@
 
             let finalSpeed = (typeConfig.speed + (score * 0.0001)) * speedMultiplier;
 
-            let speedCap = 0.35; 
+            let speedCap = 0.275; // 困難模式上限 (改為玩家的 110%，0.25 * 1.1)
 
             if (selectedDifficulty === 'easy') {
-                speedCap = 0.15; 
+                speedCap = 0.15; // 簡單模式上限 (約 60%)
             } else if (selectedDifficulty === 'normal') {
-                speedCap = 0.22; 
+                speedCap = 0.22; // 普通模式上限 (約 90%)
             }
 
             finalSpeed = Math.min(finalSpeed, speedCap);
